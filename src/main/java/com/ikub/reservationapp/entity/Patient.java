@@ -1,6 +1,5 @@
 package com.ikub.reservationapp.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.ikub.reservationapp.model.Person;
 import lombok.Data;
 import javax.persistence.*;
@@ -22,7 +21,6 @@ public class Patient extends Person {
     @Digits(fraction = 0, integer = 10)
     private String telephone;
 
-    @JsonManagedReference(value="patient")
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "patient")
     private List<Appointment> appointments;
 }

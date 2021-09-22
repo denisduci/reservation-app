@@ -17,15 +17,15 @@ public class DoctorController {
     @Autowired
     private DoctorService doctorService;
 
+    @PostMapping
+    public ResponseEntity<?> saveDoctor(@RequestBody Doctor doctor) {
+        log.info("Saving doctor...");
+        return new ResponseEntity<>(doctorService.save(doctor), HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getDoctorById(@PathVariable("id") Long id) throws DoctorNotFoundException {
         log.info("Retrieving doctor by id...");
         return new ResponseEntity<>(doctorService.findById(id), HttpStatus.OK);
-    }
-
-    @PostMapping("/doctor")
-    public ResponseEntity<?> saveDoctor(@RequestBody Doctor doctor) {
-        log.info("Saving doctor...");
-        return new ResponseEntity<>(doctorService.save(doctor), HttpStatus.OK);
     }
 }

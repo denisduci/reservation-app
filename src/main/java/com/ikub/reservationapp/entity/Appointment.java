@@ -1,23 +1,25 @@
 package com.ikub.reservationapp.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ikub.reservationapp.model.BaseEntity;
 import lombok.Data;
-import lombok.ToString;
 import org.springframework.format.annotation.DateTimeFormat;
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
 @Entity
-@ToString
 public class Appointment extends BaseEntity {
 
     @Column(name = "appointment_date")
     @DateTimeFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     @Temporal(TemporalType.TIMESTAMP)
     private Date date;
+
+    private LocalDateTime dateTime;
 
     @NotEmpty
     private String description;
@@ -26,14 +28,10 @@ public class Appointment extends BaseEntity {
 
     private Status status;
 
-    @JsonBackReference(value = "doctor")
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "doctor_id")
+    @ManyToOne(fetch = FetchType.LAZY)
     private Doctor doctor;
 
-    @JsonBackReference(value = "patient")
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "patient_id")
+    @ManyToOne(fetch = FetchType.LAZY)
     private Patient patient;
 
     public static enum Status {

@@ -7,10 +7,14 @@ import com.ikub.reservationapp.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
 import com.ikub.reservationapp.repository.AppointmentRepository;
 import com.ikub.reservationapp.repository.PatientRepository;
+import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -25,6 +29,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public Iterable<Appointment> findAvailableAppointments() {
+
+//        LocalDateTime datetime = LocalDateTime.now();
+//        datetime.plusDays(7);
+
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DATE, 7);
         Date nextDate = cal.getTime();
@@ -56,7 +64,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public ResponseEntity<?> cancelAppointment(Appointment appointment) {
-
+//        LocalDateTime current = LocalDateTime.now();
+//        LocalDateTime  next = appointment.getDateTime();
+//        Duration duration = Duration.between(next,current);
+//        long seconds = duration.getSeconds();
+//        long hoursD = seconds / 3600;
         long secs = (appointment.getDate().getTime() - new Date().getTime()) / 1000;
         long hours = secs / 3600;
 

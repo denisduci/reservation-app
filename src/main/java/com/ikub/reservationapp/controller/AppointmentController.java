@@ -93,7 +93,7 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByStatus(status), HttpStatus.OK);
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<Iterable<Appointment>> getAllAppointments() {
         log.info("Retrieving all appointments...");
         return new ResponseEntity<>(appointmentService.findAllAppointments(), HttpStatus.OK);
