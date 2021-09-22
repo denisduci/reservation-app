@@ -19,6 +19,9 @@ public class GlobalExceptionHandler {
     @Value(value = "${data.exception.doctornotfound}")
     private String message3;
 
+    @Value(value = "${data.exception.general}")
+    private String message4;
+
     @ExceptionHandler(value = PatientNotFoundException.class)
     public ResponseEntity patientNotFoundException(PatientNotFoundException patientNotFoundException) {
         return new ResponseEntity(message1, HttpStatus.NOT_FOUND);
@@ -32,5 +35,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = DoctorNotFoundException.class)
     public ResponseEntity doctorNotFoundException(DoctorNotFoundException doctorNotFoundException) {
         return new ResponseEntity(message3, HttpStatus.NOT_FOUND);
+    }
+    @ExceptionHandler(value = GeneralException.class)
+    public ResponseEntity generalException(GeneralException generalException) {
+        return new ResponseEntity(message4, HttpStatus.BAD_REQUEST);
     }
 }

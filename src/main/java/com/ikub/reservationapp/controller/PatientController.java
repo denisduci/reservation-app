@@ -1,7 +1,9 @@
 package com.ikub.reservationapp.controller;
 
+import com.ikub.reservationapp.dto.PatientDto;
 import com.ikub.reservationapp.entity.Patient;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
+import com.ikub.reservationapp.mapper.MapStructMapper;
 import com.ikub.reservationapp.service.PatientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,9 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
+    @Autowired
+    private MapStructMapper mapStructMapper;
+
     @PostMapping
     public ResponseEntity<?> savePatient(@RequestBody Patient patient) {
         log.info("Saving patient...");
@@ -24,9 +29,10 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPatientById(@PathVariable("id") Long id) throws PatientNotFoundException {
+    public ResponseEntity<PatientDto> getPatientById(@PathVariable("id") Long id) throws PatientNotFoundException {
         log.info("Retrieving patient by id...");
         Patient patient = patientService.findById(id);
-        return new ResponseEntity<>(patient, HttpStatus.OK);
+        PatientDto patientDto = mapStructMapper.patientToPatientDto(patient);
+        return new ResponseEntity<>(patientDto, HttpStatus.OK);
     }
 }

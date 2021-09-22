@@ -4,19 +4,17 @@ import com.ikub.reservationapp.entity.Appointment;
 import com.ikub.reservationapp.entity.Doctor;
 import com.ikub.reservationapp.entity.Patient;
 import com.ikub.reservationapp.exception.AppointmentNotFoundException;
+import com.ikub.reservationapp.exception.GeneralException;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
 import com.ikub.reservationapp.repository.AppointmentRepository;
 import com.ikub.reservationapp.repository.PatientRepository;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
@@ -28,31 +26,35 @@ public class AppointmentServiceImpl implements AppointmentService {
     private PatientRepository patientRepository;
 
     @Override
-    public Iterable<Appointment> findAvailableAppointments() {
+    public List<Appointment> findAvailableAppointments() {
 
-//        LocalDateTime datetime = LocalDateTime.now();
-//        datetime.plusDays(7);
+        LocalDateTime datetime = LocalDateTime.now();
+        LocalDateTime newDate = datetime.plusDays(7);
 
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, 7);
-        Date nextDate = cal.getTime();
-        return appointmentRepository.findAllByStatusAndDateBetween(
-                Appointment.Status.AVAILABLE, new Date(), nextDate);
+//        Calendar cal = Calendar.getInstance();
+//        cal.add(Calendar.DATE, 7);
+//        Date nextDate = cal.getTime();
+//        return appointmentRepository.findAllByStatusAndDateBetween(
+//                Appointment.Status.AVAILABLE, new Date(), nextDate);
+        return appointmentRepository.findByStatusAndDateTimeBetween(
+                Appointment.Status.AVAILABLE, LocalDateTime.now(), newDate);
     }
 
     @Override
-    public Iterable<Appointment> findAllAppointments() {
-        return appointmentRepository.findAll();
+    public List<Appointment> findAllAppointments() {
+        List<Appointment> appointments = new ArrayList<>();
+        appointmentRepository.findAll().forEach(appointments::add);
+        return appointments;
     }
 
     @Override
-    public ResponseEntity<?> reserveAppointment(Appointment appointment, Patient patient) throws AppointmentNotFoundException, PatientNotFoundException {
+    public Appointment reserveAppointment(Appointment appointment) throws AppointmentNotFoundException, PatientNotFoundException, GeneralException {
         if (appointment.getStatus().name().equalsIgnoreCase("available")) {
             appointment.setStatus(Appointment.Status.PENDING);
-            appointment.setPatient(patient);
-            return new ResponseEntity<>(save(appointment), HttpStatus.OK);
+            appointment.setPatient(appointment.getPatient());
+            return save(appointment);
         }
-        return new ResponseEntity<>("Appointment is RESERVED", HttpStatus.NOT_FOUND);
+        throw new GeneralException("Cannot reserve appointmend");
     }
 
     @Override
@@ -63,26 +65,38 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public ResponseEntity<?> cancelAppointment(Appointment appointment) {
-//        LocalDateTime current = LocalDateTime.now();
-//        LocalDateTime  next = appointment.getDateTime();
-//        Duration duration = Duration.between(next,current);
-//        long seconds = duration.getSeconds();
-//        long hoursD = seconds / 3600;
-        long secs = (appointment.getDate().getTime() - new Date().getTime()) / 1000;
-        long hours = secs / 3600;
+    public Appointment cancelAppointment(Appointment appointment) throws AppointmentNotFoundException {
+        LocalDateTime current = LocalDateTime.now();
+        LocalDateTime next = appointment.getDateTime();
+        Duration duration = Duration.between(current, next);
+        long seconds = duration.getSeconds();
+        long hours = seconds / 3600;
 
         if (hours >= 24) {
             appointment.setStatus(Appointment.Status.CANCELED);
             appointment.setPatient(null);
-            return new ResponseEntity<>(save(appointment), HttpStatus.OK);
+            Optional<Doctor> optionalDoctor = Optional.ofNullable(appointment.getDoctor());
+            if (optionalDoctor.isPresent()) {
+                appointment.setDoctor(null);
+            }
+            return (save(appointment));
         }
-        return new ResponseEntity<>("Time too short to cancel", HttpStatus.BAD_REQUEST);
+        throw new AppointmentNotFoundException("Appointment not found");
     }
 
     @Override
-    public Iterable<Appointment> findByStatus(Appointment.Status status) {
+    public List<Appointment> findByStatus(Appointment.Status status) {
         return appointmentRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Appointment> findByPatient(Patient patient) {
+        return appointmentRepository.findByPatient(patient);
+    }
+
+    @Override
+    public List<Appointment> findByDoctor(Doctor doctor) {
+        return appointmentRepository.findByDoctor(doctor);
     }
 
     @Override

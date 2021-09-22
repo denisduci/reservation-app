@@ -4,24 +4,31 @@ import com.ikub.reservationapp.entity.Appointment;
 import com.ikub.reservationapp.entity.Doctor;
 import com.ikub.reservationapp.entity.Patient;
 import com.ikub.reservationapp.exception.AppointmentNotFoundException;
+import com.ikub.reservationapp.exception.GeneralException;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 
 public interface AppointmentService {
 
     Appointment save(Appointment appointment);
 
-    Iterable<Appointment> findByStatus(Appointment.Status status);
+    List<Appointment> findByStatus(Appointment.Status status);
 
-    Iterable<Appointment> findAvailableAppointments();
+    List<Appointment> findByPatient(Patient patient);
 
-    Iterable<Appointment> findAllAppointments();
+    List<Appointment> findByDoctor(Doctor doctor);
+
+    List<Appointment> findAvailableAppointments();
+
+    List<Appointment> findAllAppointments();
 
     Appointment findById(Long id) throws AppointmentNotFoundException;
 
-    ResponseEntity<?> cancelAppointment(Appointment appointment);
+    Appointment cancelAppointment(Appointment appointment) throws AppointmentNotFoundException;
 
-    ResponseEntity<?> reserveAppointment(Appointment appointment, Patient patient) throws AppointmentNotFoundException, PatientNotFoundException;
+    Appointment reserveAppointment(Appointment appointment) throws AppointmentNotFoundException, PatientNotFoundException, GeneralException;
 
     ResponseEntity<?> changeDoctor(Doctor doctor, Appointment appointment);
 }

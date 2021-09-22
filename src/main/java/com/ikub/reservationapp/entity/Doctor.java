@@ -9,8 +9,8 @@ import java.util.List;
 @Data
 public class Doctor extends Person {
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "doctor")
-    private List<Appointment> appointments;
+//    @OneToMany(cascade = CascadeType.ALL, mappedBy = "doctor")
+//    private List<Appointment> appointments;
 
     private String specialty;
 

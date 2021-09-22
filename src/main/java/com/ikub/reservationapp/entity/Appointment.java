@@ -14,10 +14,10 @@ import java.util.Date;
 @Entity
 public class Appointment extends BaseEntity {
 
-    @Column(name = "appointment_date")
-    @DateTimeFormat(pattern = "dd-MM-yyyy HH:mm:ss")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date date;
+//    @Column(name = "appointment_date")
+//    @DateTimeFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+//    @Temporal(TemporalType.TIMESTAMP)
+//    private Date date;
 
     private LocalDateTime dateTime;
 
