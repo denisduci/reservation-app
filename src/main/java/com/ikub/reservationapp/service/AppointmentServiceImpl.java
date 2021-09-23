@@ -12,6 +12,7 @@ import com.ikub.reservationapp.mapper.MapStructMapper;
 import com.ikub.reservationapp.repository.AppointmentRepository;
 import com.ikub.reservationapp.repository.DoctorRepository;
 import com.ikub.reservationapp.repository.PatientRepository;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -37,8 +38,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> findAvailableAppointments() {
-        LocalDateTime datetime = LocalDateTime.now();
-        LocalDateTime newDate = datetime.plusDays(7);
+        val datetime = LocalDateTime.now();
+        val newDate = datetime.plusDays(7);
         return appointmentRepository.findByStatusAndDateTimeBetween(
                 Appointment.Status.AVAILABLE, LocalDateTime.now(), newDate)
                 .stream().map(appointment -> mapStructMapper.appointmentToAppointmentDto(appointment))
@@ -47,14 +48,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto reserveAppointment(Long id, AppointmentDto newAppointmentDto) throws AppointmentNotFoundException, PatientNotFoundException, GeneralException {
-        Appointment appointment = findById(id);
-        Optional<Patient> optionalPatient = patientRepository.findById(newAppointmentDto.getPatient().getId());
-        if (!optionalPatient.isPresent()) {
-            throw new PatientNotFoundException("Patient not found");
-        }
-        if (appointment.getStatus().name().equalsIgnoreCase("available")) {
+        val appointment = findById(id);
+        val patient = patientRepository.findById(newAppointmentDto.getPatient().getId())
+                .orElseThrow(() -> new PatientNotFoundException("Patient not found"));
+
+        if (appointment.getStatus() == Appointment.Status.AVAILABLE) {
             appointment.setStatus(Appointment.Status.PENDING);
-            appointment.setPatient(optionalPatient.get());
+            appointment.setPatient(patient);
             return save(mapStructMapper.appointmentToAppointmentDto(appointment));
         }
         throw new GeneralException("This appointment is already reserved!");
@@ -62,12 +62,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto changeDoctor(Long id, AppointmentDto newAppointmentDto) {
-        Appointment appointment = findById(id);
-        Optional<Doctor> optionalDoctor = doctorRepository.findById(newAppointmentDto.getDoctor().getId());
-        if (!optionalDoctor.isPresent()) {
-            throw new DoctorNotFoundException("Doctor not found");
-        }
-        Doctor doctor = optionalDoctor.get();
+        val appointment = findById(id);
+
+        val doctor = doctorRepository.findById(newAppointmentDto.getDoctor().getId())
+                .orElseThrow(() -> new DoctorNotFoundException("Doctor not found!"));
+
         appointment.setDoctor(doctor);
         appointment.setStatus(Appointment.Status.CHANGED);
         return save(mapStructMapper.appointmentToAppointmentDto(appointment));
@@ -75,14 +74,14 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto changeStatus(Long id, Appointment.Status status) {
-        Appointment appointment = findById(id);
+        val appointment = findById(id);
         appointment.setStatus(status);
         return save(mapStructMapper.appointmentToAppointmentDto(appointment));
     }
 
     @Override
     public AppointmentDto updateToDone(Long id) {
-        Appointment appointment = findById(id);
+        val appointment = findById(id);
         Optional<String> optionalFeedback = Optional.ofNullable(appointment.getFeedback());
         if (optionalFeedback.isPresent()) {
             appointment.setStatus(Appointment.Status.DONE);
@@ -92,19 +91,21 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> search(String keyword) {
-        return null;
+    public AppointmentDto updateAppointmentFeedback(Long id, AppointmentDto appointmentDto) {
+        val appointment = findById(id);
+        appointment.setFeedback(appointmentDto.getFeedback());
+        return save(mapStructMapper.appointmentToAppointmentDto(appointment));
     }
 
     @Override
     public AppointmentDto cancelAppointment(Long id) throws AppointmentNotFoundException {
 
-        Appointment appointment = findById(id);
-        LocalDateTime current = LocalDateTime.now();
-        LocalDateTime next = appointment.getDateTime();
-        Duration duration = Duration.between(current, next);
-        long seconds = duration.getSeconds();
-        long hours = seconds / 3600;
+        val appointment = findById(id);
+        val current = LocalDateTime.now();
+        val next = appointment.getDateTime();
+        val duration = Duration.between(current, next);
+        val seconds = duration.getSeconds();
+        val hours = seconds / 3600;
 
         if (hours >= 24) {
             appointment.setStatus(Appointment.Status.CANCELED);
@@ -126,22 +127,20 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> findByPatient(Long patientId) {
-        Optional<Patient> optionalPatient = patientRepository.findById(patientId);
-        if (!optionalPatient.isPresent()) {
-            throw new PatientNotFoundException("Patient not found!");
-        }
-        return appointmentRepository.findByPatient(optionalPatient.get())
+        val patient = patientRepository.findById(patientId)
+                .orElseThrow(()-> new PatientNotFoundException("Patient Not found"));
+
+        return appointmentRepository.findByPatient(patient)
                 .stream().map(appointment -> mapStructMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<AppointmentDto> findByDoctor(Long doctorId) {
-        Optional<Doctor> optionalDoctor = doctorRepository.findById(doctorId);
-        if (!optionalDoctor.isPresent()) {
-            throw new DoctorNotFoundException("Doctor Not found");
-        }
-        return appointmentRepository.findByDoctor(optionalDoctor.get())
+        val doctor =doctorRepository.findById(doctorId)
+                .orElseThrow(()->new DoctorNotFoundException("Doctor not found!"));
+
+        return appointmentRepository.findByDoctor(doctor)
                 .stream().map(appointment -> mapStructMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
@@ -162,37 +161,33 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto save(AppointmentDto appointmentDto) {
-        Appointment appointment = appointmentRepository.save(
+        val appointment = appointmentRepository.save(
                 mapStructMapper.appointmentDtoToAppointment(appointmentDto));
         return mapStructMapper.appointmentToAppointmentDto(appointment);
     }
 
     @Override
     public List<AppointmentDto> findByStatusAndPatient(Appointment.Status status, Long patientId) {
-        Optional<Patient> optionalPatient = patientRepository.findById(patientId);
-        if (!optionalPatient.isPresent()) {
-            throw new PatientNotFoundException("Patient not found");
-        }
+        val patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new PatientNotFoundException("Patient not found!"));
 
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(status, optionalPatient.get()))) {
+        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(status, patient))) {
             throw new AppointmentNotFoundException("No appointment found!");
         }
-        return appointmentRepository.findByStatusAndPatient(status, optionalPatient.get())
+        return appointmentRepository.findByStatusAndPatient(status, patient)
                 .stream().map(appointment -> mapStructMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<AppointmentDto> findByStatusAndDoctor(Appointment.Status status, Long doctorId) {
-        Optional<Doctor> optionalDoctor = doctorRepository.findById(doctorId);
-        if (!optionalDoctor.isPresent()) {
-            throw new DoctorNotFoundException("Doctor not found");
-        }
+        val doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new DoctorNotFoundException("Doctor not found!"));
 
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(status, optionalDoctor.get()))) {
+        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(status, doctor))) {
             throw new AppointmentNotFoundException("No appointment found!");
         }
-        return appointmentRepository.findByStatusAndDoctor(status, optionalDoctor.get())
+        return appointmentRepository.findByStatusAndDoctor(status, doctor)
                 .stream().map(appointment -> mapStructMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }

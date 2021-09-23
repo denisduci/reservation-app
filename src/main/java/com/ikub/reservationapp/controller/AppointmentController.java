@@ -103,4 +103,11 @@ public class AppointmentController {
         log.info("Updating appointment status to DONE...");
         return new ResponseEntity<>(appointmentService.updateToDone(id), HttpStatus.OK);
     }
+
+    @PatchMapping("/feedback/{id}")
+    public ResponseEntity<AppointmentDto> updateAppointmentFeedback(@PathVariable("id") Long id,
+                                                                    @RequestBody AppointmentDto appointmentDto) {
+        log.info("Updating appointment feedback...");
+        return new ResponseEntity<>(appointmentService.updateAppointmentFeedback(id, appointmentDto), HttpStatus.OK);
+    }
 }

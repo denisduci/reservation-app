@@ -15,7 +15,6 @@ public interface AppointmentRepository extends CrudRepository<Appointment, Long>
     List<Appointment> findByPatient(Patient patient);
     List<Appointment> findByDoctor(Doctor doctor);
     List<Appointment> findAll();
-    List<Appointment> search(String keyword);
     List<Appointment> findByStatusAndPatient(Appointment.Status status, Patient patient);
     List<Appointment> findByStatusAndDoctor(Appointment.Status status, Doctor doctor);
     List<Appointment> findByStatusAndDateTimeBetween(Appointment.Status status, LocalDateTime current, LocalDateTime endDate);

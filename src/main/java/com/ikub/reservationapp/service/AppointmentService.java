@@ -15,7 +15,7 @@ public interface AppointmentService {
     AppointmentDto changeDoctor(Long id, AppointmentDto newAppointmentDto);
     AppointmentDto changeStatus(Long id, Appointment.Status status);
     AppointmentDto updateToDone(Long id);
-    List<AppointmentDto> search(String keyword);
+    AppointmentDto updateAppointmentFeedback(Long id, AppointmentDto appointmentDto);
     Appointment findById(Long id) throws AppointmentNotFoundException;
     List<AppointmentDto> findByPatient(Long patientId);
     List<AppointmentDto> findByDoctor(Long doctorId);
