@@ -1,7 +1,9 @@
 package com.ikub.reservationapp.service;
 
+import com.ikub.reservationapp.dto.PatientDto;
 import com.ikub.reservationapp.entity.Patient;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
+import com.ikub.reservationapp.mapper.MapStructMapper;
 import com.ikub.reservationapp.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,9 +14,13 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private MapStructMapper mapStructMapper;
+
     @Override
-    public Patient save(Patient patient) {
-        return patientRepository.save(patient);
+    public PatientDto save(PatientDto patientDto) {
+        Patient patient = patientRepository.save(mapStructMapper.patientDtoToPatient(patientDto));
+        return mapStructMapper.patientToPatientDto(patient);
     }
 
     @Override

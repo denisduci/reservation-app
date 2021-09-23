@@ -23,16 +23,15 @@ public class PatientController {
     private MapStructMapper mapStructMapper;
 
     @PostMapping
-    public ResponseEntity<?> savePatient(@RequestBody Patient patient) {
+    public ResponseEntity<PatientDto> savePatient(@RequestBody PatientDto patientDto) {
         log.info("Saving patient...");
-        return new ResponseEntity<>(patientService.save(patient), HttpStatus.OK);
+        return new ResponseEntity<>(patientService.save(patientDto), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PatientDto> getPatientById(@PathVariable("id") Long id) throws PatientNotFoundException {
         log.info("Retrieving patient by id...");
         Patient patient = patientService.findById(id);
-        PatientDto patientDto = mapStructMapper.patientToPatientDto(patient);
-        return new ResponseEntity<>(patientDto, HttpStatus.OK);
+        return new ResponseEntity<>(mapStructMapper.patientToPatientDto(patient), HttpStatus.OK);
     }
 }

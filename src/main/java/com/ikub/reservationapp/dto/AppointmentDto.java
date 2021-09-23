@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 @Data
 public class AppointmentDto {
 
-    private Long id;
-//    private Date date;
+    //private Long id;
     private LocalDateTime dateTime;
+    private String feedback;
     private String description;
     private String comments;
     private Appointment.Status status;
