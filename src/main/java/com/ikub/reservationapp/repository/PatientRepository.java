@@ -12,7 +12,7 @@ import java.util.List;
 public interface PatientRepository extends CrudRepository<Patient, Long> {
 
     @Nullable
-    List<Patient> findByFirstNameOrLastNameContaining(@Nullable String firstName, @Nullable String lastName);
+    List<Patient> findByFirstNameOrLastNameContainingAllIgnoreCase(@Nullable String firstName, @Nullable String lastName);
 //@Query("SELECT p FROM Patient p WHERE CONCAT(p.firstName, p.lastName) LIKE %?1%")
 //List<Patient> search(String keyword);
 }

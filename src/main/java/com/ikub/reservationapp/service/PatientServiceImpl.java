@@ -6,6 +6,8 @@ import com.ikub.reservationapp.exception.GeneralException;
 import com.ikub.reservationapp.exception.PatientNotFoundException;
 import com.ikub.reservationapp.mapper.MapStructMapper;
 import com.ikub.reservationapp.repository.PatientRepository;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -27,10 +29,20 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public List<PatientDto> search(String firstName, String lastName) {
+    public PatientDto updatePatient(Long id, PatientDto patientDto) {
+        val patient = findById(id);
+        patient.setAddress(patientDto.getAddress());
+        patient.setCity(patientDto.getCity());
+        patient.setTelephone(patientDto.getTelephone());
+        patient.setFirstName(patientDto.getFirstName());
+        patient.setLastName(patientDto.getLastName());
+        return save(mapStructMapper.patientToPatientDto(patient));
+    }
 
-        if (!(firstName.trim().isEmpty() && lastName.trim().isEmpty())) {
-            return patientRepository.findByFirstNameOrLastNameContaining(firstName, lastName)
+    @Override
+    public List<PatientDto> search(String firstName, String lastName) {
+        if (!(StringUtils.isEmpty(firstName) && StringUtils.isEmpty(lastName))) {
+            return patientRepository.findByFirstNameOrLastNameContainingAllIgnoreCase(firstName, lastName)
                     .stream().map(patient -> mapStructMapper.patientToPatientDto(patient))
                     .collect(Collectors.toList());
         }

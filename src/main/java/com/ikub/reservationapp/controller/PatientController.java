@@ -9,12 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Slf4j
@@ -44,7 +39,14 @@ public class PatientController {
     @GetMapping("/search")
     public ResponseEntity<List<PatientDto>> searchPatient( @RequestParam("firstname") String firstName,
                                                            @RequestParam("lastname") String lastName) throws PatientNotFoundException {
-        log.info("Retrieving patient by id...");
+        log.info("Searching for patient...");
         return new ResponseEntity<>(patientService.search(firstName, lastName), HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PatientDto> updatePatient(@PathVariable("id") Long id,
+                                                    @RequestBody PatientDto patientDto) throws PatientNotFoundException {
+        log.info("Updating patient...");
+        return new ResponseEntity<>(patientService.updatePatient(id, patientDto), HttpStatus.OK);
     }
 }

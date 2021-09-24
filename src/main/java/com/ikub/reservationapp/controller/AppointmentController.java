@@ -59,8 +59,8 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByDoctor(id), HttpStatus.OK);
     }
 
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<AppointmentDto>> getAppointmentsByStatus(@PathVariable Appointment.Status status) {
+    @GetMapping("/status")
+    public ResponseEntity<List<AppointmentDto>> getAppointmentsByStatus(@RequestParam Appointment.Status status) {
         log.info("Retrieving appointments by status...");
         return new ResponseEntity<>(appointmentService.findByStatus(status), HttpStatus.OK);
     }

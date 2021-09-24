@@ -10,5 +10,6 @@ public interface PatientService {
 
     Patient findById(Long id) throws PatientNotFoundException;
     PatientDto save(PatientDto patientDto);
+    PatientDto updatePatient(Long id, PatientDto patientDto);
     List<PatientDto> search(String firstName, String lastName);
 }

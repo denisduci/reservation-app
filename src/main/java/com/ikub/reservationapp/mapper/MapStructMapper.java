@@ -3,9 +3,11 @@ package com.ikub.reservationapp.mapper;
 import com.ikub.reservationapp.dto.AppointmentDto;
 import com.ikub.reservationapp.dto.DoctorDto;
 import com.ikub.reservationapp.dto.PatientDto;
+import com.ikub.reservationapp.dto.UserDto;
 import com.ikub.reservationapp.entity.Appointment;
 import com.ikub.reservationapp.entity.Doctor;
 import com.ikub.reservationapp.entity.Patient;
+import com.ikub.reservationapp.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -36,4 +38,8 @@ public interface MapStructMapper {
     PatientDto patientToPatientDto(Patient patient);
 
     Patient patientDtoToPatient(PatientDto patientDto);
+
+    User userDtoToUser(UserDto userDto);
+
+    UserDto userToUserDto(User user);
 }
