@@ -1,0 +1,27 @@
+#******************* POSTGRES CONFIGURATION *******
+spring:
+  datasource:
+        url: jdbc:postgresql://localhost:5432/reservationapp
+        username: postgres
+        password: admin123
+  jpa:
+    hibernate:
+        ddl-auto: create-drop
+    properties:
+        hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  devtools:
+    restart:
+      enabled: true
+
+jwt:
+  token:
+    validity: 18000
+    prefix: Bearer
+  signing:
+      key: signingkey
+  authorities:
+      key: roles
+  header:
+    string: Authorization
