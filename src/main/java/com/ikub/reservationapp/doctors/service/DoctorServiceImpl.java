@@ -8,7 +8,10 @@ import com.ikub.reservationapp.doctors.repository.DoctorRepository;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
@@ -34,5 +37,12 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public List<DoctorReportDto> findDoctors() {
         return doctorRepository.findByOrderByDoctorDesc();
+    }
+
+    @Override
+    public List<DoctorDto> findAvailableDoctors(LocalDateTime start, LocalDateTime end) {
+        return doctorRepository.findAvailableDoctors(start, end)
+                .stream().map(doctorEntity -> doctorMapper.doctorToDoctorDto(doctorEntity))
+                .collect(Collectors.toList());
     }
 }

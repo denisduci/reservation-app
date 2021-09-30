@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import sun.util.resources.ga.LocaleNames_ga;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +22,11 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
     List<AppointmentEntity> findByStatus(Status status);
     @Query("select a from AppointmentEntity a where a.appointmentDate =:appointmentDateTime")
     List<AppointmentEntity> findByAppointmentDate(@Param("appointmentDateTime") LocalDate appointmentDate);
+
+    @Query("select a from AppointmentEntity a WHERE a.startTime >=:appointmentStartTime AND a.endTime <=:appointmentEndTime OR :appointmentStartTime BETWEEN a.startTime AND a.endTime AND a.doctor=:doctorId")
+    Optional<AppointmentEntity> findByDoctorAvailability(@Param("doctorId") DoctorEntity doctorId,
+                                                                                                @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
+                                                                                                @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
     List<AppointmentEntity> findByPatient(PatientEntity patient);
     List<AppointmentEntity> findByDoctor(DoctorEntity doctor);
     List<AppointmentEntity> findAll();

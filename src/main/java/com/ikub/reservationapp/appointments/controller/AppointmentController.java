@@ -1,7 +1,7 @@
 package com.ikub.reservationapp.appointments.controller;
 
+import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
-;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
@@ -12,10 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -31,8 +28,14 @@ public class AppointmentController {
 //        return new ResponseEntity<>(appointmentService.findAvailableAppointments(), HttpStatus.OK);
 //    }
 
+    @PostMapping
+    public ResponseEntity<AppointmentDto> createAppointment(@RequestBody AppointmentDto appointmentDto) {
+        log.info("Retrieving available appointments...");
+        return new ResponseEntity<>(appointmentService.createAppointment(appointmentDto), HttpStatus.OK);
+    }
+
     @GetMapping("/available/v2")
-    public ResponseEntity<Map<Object, List<Integer>>> getAllAvailableHours() {
+    public ResponseEntity<AppointmentDateHourDto> getAllAvailableHours() {
         log.info("Retrieving available appointments...");
         return new ResponseEntity<>(appointmentService.findAvailableHours(), HttpStatus.OK);
     }
@@ -81,7 +84,7 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findAllAppointments(), HttpStatus.OK);
     }
 
-    @PostMapping
+    @PostMapping("/save")
     public ResponseEntity<AppointmentDto> saveAppointment(@RequestBody AppointmentDto appointmentDto) {
         log.info("Saving appointment...");
         return new ResponseEntity<>(appointmentService.save(appointmentDto), HttpStatus.CREATED);

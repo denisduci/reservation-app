@@ -1,23 +1,20 @@
 package com.ikub.reservationapp.appointments.service;
 
+import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
-import org.apache.tomcat.jni.Local;
-
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public interface AppointmentService {
 
+    AppointmentDto createAppointment(AppointmentDto appointmentDto);
     //List<AppointmentDto> findAvailableAppointments();
-    Map<Object, List<Integer>> findAvailableHours();
+    AppointmentDateHourDto findAvailableHours();
     List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate);
     AppointmentDto reserveAppointment(Long id, AppointmentDto newAppointmentDto) throws AppointmentNotFoundException, PatientNotFoundException, ReservationAppException;
     AppointmentDto cancelAppointment(Long id) throws AppointmentNotFoundException;

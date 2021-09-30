@@ -1,9 +1,16 @@
 package com.ikub.reservationapp.appointments.service;
 
+import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.appointments.mapper.AppointmentMapper;
 import com.ikub.reservationapp.common.enums.Status;
+import com.ikub.reservationapp.doctors.dto.DoctorDto;
+import com.ikub.reservationapp.doctors.mapper.DoctorMapper;
+import com.ikub.reservationapp.doctors.service.DoctorService;
+import com.ikub.reservationapp.patients.entity.PatientEntity;
+import com.ikub.reservationapp.patients.mapper.PatientMapper;
+import com.ikub.reservationapp.patients.service.PatientService;
 import org.apache.commons.lang3.StringUtils;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.doctors.exception.DoctorNotFoundException;
@@ -13,7 +20,10 @@ import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import com.ikub.reservationapp.doctors.repository.DoctorRepository;
 import com.ikub.reservationapp.patients.repository.PatientRepository;
 import lombok.val;
+import com.ikub.reservationapp.doctors.entity.DoctorEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import java.time.Duration;
@@ -27,6 +37,9 @@ import java.util.stream.IntStream;
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
 
+    public static final int START_TIME = 8;
+    public static final int END_TIME = 17;
+
     @Autowired
     private AppointmentRepository appointmentRepository;
 
@@ -37,10 +50,19 @@ public class AppointmentServiceImpl implements AppointmentService {
     private DoctorRepository doctorRepository;
 
     @Autowired
+    private DoctorService doctorService;
+
+    @Autowired
+    private PatientService patientService;
+
+    @Autowired
+    private DoctorMapper doctorMapper;
+
+    @Autowired
     private AppointmentMapper appointmentMapper;
 
-    public static final int START_TIME=8;
-    public static final int END_TIME=17;
+    @Autowired
+    private PatientMapper patientMapper;
 
 //    @Override
 //    public List<AppointmentDto> findAvailableAppointments() {
@@ -57,65 +79,78 @@ public class AppointmentServiceImpl implements AppointmentService {
 //    }
 
     @Override
-    public Map<Object, List<Integer>> findAvailableHours() {
-        val appointments = appointmentRepository.findAll();
-        Map<Object, List<Integer>> objectListMap = new HashMap<>();
-        LocalDate firstDate = LocalDate.now();
-        LocalDate nextDate = firstDate.plusDays(7);
-        long numOfDaysBetween = ChronoUnit.DAYS.between(firstDate, nextDate);
+    public AppointmentDto createAppointment(AppointmentDto appointmentDto) {
+        //check if doctor exists and doctor availability
+        //check if patient exists
+        //check time range
+        DoctorEntity doctor = doctorMapper.doctorDtoToDoctor(
+                doctorService.findById(appointmentDto.getDoctor().getId()));
+        appointmentRepository
+                .findByDoctorAvailability(doctor, appointmentDto.getStartTime(), appointmentDto.getEndTime()).ifPresent(appointmentEntity -> {
+            throw new ReservationAppException("Doctor is not available in this time!");
+        });
+        if (appointmentDto.getStartTime().getHour() < START_TIME || appointmentDto.getEndTime().getHour() >= END_TIME) {
+            throw new ReservationAppException("Appointment time is out of business hours");
+        }
+        PatientEntity patient =  patientService.findById(appointmentDto.getPatient().getId());
+        appointmentDto.setDoctor(doctorMapper.doctorToDoctorDto(doctor));
+        appointmentDto.setPatient(patientMapper.patientToPatientDto(patient));
+        appointmentDto.setStatus(Status.PENDING);
+        return appointmentMapper.appointmentToAppointmentDto(
+                appointmentRepository.save(appointmentMapper.appointmentDtoToAppointment(appointmentDto)));
+    }
 
-        List<LocalDate> dates = new ArrayList<>();
-        dates = IntStream.iterate(0, i -> i + 1)
+    @Override
+    public AppointmentDateHourDto findAvailableHours() {
+        Map<LocalDate, List<LocalDateTime>> allAvailableAppointmentDatesAndHours = new HashMap<>();
+        long numOfDaysBetween = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.now().plusDays(7));
+        //find all dates to present to user
+        List<LocalDate> datesToIterate = IntStream.iterate(0, i -> i + 1)
                 .limit(numOfDaysBetween)
-                .mapToObj(i -> firstDate.plusDays(i))
+                .mapToObj(i -> LocalDate.now().plusDays(i))
                 .collect(Collectors.toList());
 
-        dates.forEach(localDate -> {
-           // List<Integer> reservedHours = new ArrayList<>();
-
-            List<LocalDateTime> reservedTimes = new ArrayList<>();
-            List<Integer> availableHours = new ArrayList<>();
-            List<AppointmentDto> appointmentDtos = findByAppointmentDate(localDate);
-            if (!CollectionUtils.isEmpty(appointmentDtos)) {
-                appointmentDtos.forEach(appointmentDto -> {
-                    int startHour = appointmentDto.getStartTime().getHour();
-                    int endHour = appointmentDto.getEndTime().getHour();
-                    for (int i = startHour; i < endHour; i++) {
-                        //reservedHours.add(i);
-                        reservedTimes.add(LocalDateTime.of(appointmentDto.getStartTime().getYear(),
+        datesToIterate.forEach(nextDate -> {
+            List<LocalDateTime> availableHours = new ArrayList<>();
+            for (int startTime = START_TIME; startTime < END_TIME; startTime++) { //create all available dates of the specific day
+                LocalDateTime availableTime = LocalDateTime.of(LocalDateTime.now().getYear(),
+                        nextDate.getMonth(),
+                        nextDate.getDayOfMonth(),
+                        startTime, 0, 0);
+                availableHours.add(availableTime);
+            }
+            List<LocalDateTime> reservedHours = new ArrayList<>();
+            List<AppointmentDto> appointmentDtos = findByAppointmentDate(nextDate);
+            //Create ALL Reserved Hours
+            appointmentDtos.forEach(appointmentDto -> {
+                int startHour = appointmentDto.getStartTime().getHour();
+                int endHour = appointmentDto.getEndTime().getHour();
+                long counter = doctorService.findAvailableDoctors(appointmentDto.getStartTime(), appointmentDto.getEndTime()).stream().count();
+                if (counter == 0) {
+                    for (int hour = startHour; hour < endHour; hour++) {
+                        reservedHours.add(LocalDateTime.of(appointmentDto.getStartTime().getYear(),
                                 appointmentDto.getStartTime().getMonth(),
                                 appointmentDto.getStartTime().getDayOfMonth(),
-                                i, 0, 0, 0));
+                                hour, 0, 0, 0));
                     }
-                });
-            }
-            for (int i = START_TIME; i <= END_TIME; i++) {
-//                if (!reservedHours.contains(i)) {
-//                    availableHours.add(i);
-//                }
-                int finalI = i;
-                reservedTimes.forEach(reservedTime -> {
-                    if (reservedTime.getHour() != finalI) {
-                        availableHours.add(finalI);
-                    }
-                });
-            }
-            objectListMap.put(localDate, availableHours);
+                }
+            });
+            //Remove Reserved Hours
+            reservedHours.forEach(reservedHour -> //for each reserved hour| loop all doctors | findByDoctorAndTime
+                    availableHours.removeIf(availableHour -> availableHour.equals(reservedHour)));
+            allAvailableAppointmentDatesAndHours.put(nextDate, availableHours);
         });
-        return objectListMap;
+        AppointmentDateHourDto allAppointments = new AppointmentDateHourDto(allAvailableAppointmentDatesAndHours);
+        return allAppointments;
     }
 
     @Override
     public List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate) {
-        Map<Object, List<Object>> objectListMap = new HashMap<>();
         return appointmentRepository.findByAppointmentDate(appointmentDate)
                 .stream().map(appointmentEntity -> appointmentMapper.appointmentToAppointmentDto(appointmentEntity))
                 .collect(Collectors.toList());
     }
-//get each day
-    //find if there are reserved
-        //if yes extract reserved times
-            //map with Object and list of integers
+
     @Override
     public AppointmentDto reserveAppointment(Long id, AppointmentDto newAppointmentDto) throws AppointmentNotFoundException, PatientNotFoundException, ReservationAppException {
         val appointment = findById(id);
@@ -219,7 +254,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
-
+//should be removed
     @Override
     public AppointmentDto save(AppointmentDto appointmentDto) {
         val appointment = appointmentRepository.save(
