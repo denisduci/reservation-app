@@ -7,11 +7,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum Status {
 
-    AVAILABLE("available"),
     PENDING("pending"),
-    ACCEPTED("accepted"),
+    APPROVED("approved"),
     CANCELED("canceled"),
-    CHANGED("changed"),
+    UPDATED("updated"),
     DONE("done");
 
     String status;

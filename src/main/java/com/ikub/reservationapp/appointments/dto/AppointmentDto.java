@@ -2,18 +2,13 @@ package com.ikub.reservationapp.appointments.dto;
 
 import com.ikub.reservationapp.doctors.dto.DoctorDto;
 import com.ikub.reservationapp.patients.dto.PatientDto;
-;
 import com.ikub.reservationapp.common.enums.Status;
 import lombok.Data;
-
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 public class AppointmentDto {
-
     private Long id;
     private LocalDate appointmentDate;
     private LocalDateTime startTime;

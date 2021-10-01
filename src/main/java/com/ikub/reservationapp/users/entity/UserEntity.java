@@ -3,10 +3,7 @@ package com.ikub.reservationapp.users.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ikub.reservationapp.common.model.BaseEntity;
 import lombok.Data;
-import org.hibernate.validator.constraints.Length;
-
 import javax.persistence.*;
-import javax.validation.constraints.*;
 import java.util.Set;
 
 @Entity
@@ -14,7 +11,6 @@ import java.util.Set;
 @Table(name = "users")
 public class UserEntity extends BaseEntity {
 
-    //retrieve reserved appointments
     private String username;
     @JsonIgnore
     private String password;

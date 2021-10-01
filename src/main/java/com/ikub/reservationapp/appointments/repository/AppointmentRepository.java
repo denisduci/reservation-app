@@ -20,17 +20,17 @@ import java.util.Optional;
 public interface AppointmentRepository extends CrudRepository<AppointmentEntity, Long> {
 
     List<AppointmentEntity> findByStatus(Status status);
+
     @Query("select a from AppointmentEntity a where a.appointmentDate =:appointmentDateTime")
     List<AppointmentEntity> findByAppointmentDate(@Param("appointmentDateTime") LocalDate appointmentDate);
 
-    @Query("select a from AppointmentEntity a WHERE a.startTime >=:appointmentStartTime AND a.endTime <=:appointmentEndTime OR :appointmentStartTime BETWEEN a.startTime AND a.endTime AND a.doctor=:doctorId")
+    @Query("select a from AppointmentEntity a WHERE ((:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) OR (:appointmentStartTime BETWEEN a.startTime AND a.endTime)) AND a.doctor=:doctorId")
     Optional<AppointmentEntity> findByDoctorAvailability(@Param("doctorId") DoctorEntity doctorId,
-                                                                                                @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
-                                                                                                @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
+                                                         @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
+                                                         @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
+    List<AppointmentEntity> findByStatusAndPatient(Status status, PatientEntity patient);
     List<AppointmentEntity> findByPatient(PatientEntity patient);
     List<AppointmentEntity> findByDoctor(DoctorEntity doctor);
     List<AppointmentEntity> findAll();
-    List<AppointmentEntity> findByStatusAndPatient(Status status, PatientEntity patient);
     List<AppointmentEntity> findByStatusAndDoctor(Status status, DoctorEntity doctor);
-    //List<AppointmentEntity> findByStatusAndAppointmentDateBetween(Status status, LocalDateTime current, LocalDateTime endDate);
 }

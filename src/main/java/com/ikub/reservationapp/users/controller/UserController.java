@@ -30,15 +30,4 @@ public class UserController {
         return new ResponseEntity<>(userService.save(userDto), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/adminping")
-    public ResponseEntity<String> adminPing() {
-        return new ResponseEntity<>("Only Admins Can Read This", HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("userping")
-    public ResponseEntity<String> userPing() {
-        return new ResponseEntity<>("Any User Can Read This", HttpStatus.OK);
-    }
 }
