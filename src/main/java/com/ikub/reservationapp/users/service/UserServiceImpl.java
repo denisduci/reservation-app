@@ -7,12 +7,14 @@ import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.security.TokenProvider;
 import com.ikub.reservationapp.users.dto.UserDto;
+import com.ikub.reservationapp.users.dto.UserUpdateDto;
 import com.ikub.reservationapp.users.entity.RoleEntity;
 import com.ikub.reservationapp.users.entity.UserEntity;
 import com.ikub.reservationapp.common.model.LoginUser;
+import com.ikub.reservationapp.users.mapper.RoleMapper;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
-import com.ikub.reservationapp.users.utils.PasswordUtil;
+import com.ikub.reservationapp.users.utils.PasswordValidationUtil;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,13 +44,16 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     private UserMapper userMapper;
 
     @Autowired
+    private RoleMapper roleMapper;
+
+    @Autowired
     private AuthenticationManager authenticationManager;
 
     @Autowired
     private TokenProvider jwtTokenUtil;
 
     @Autowired
-    private PasswordUtil passwordUtil;
+    private PasswordValidationUtil passwordValidation;
 
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity user = Optional.of(userRepository.findByUsername(username))
@@ -76,6 +81,20 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
+    public UserUpdateDto updateUser(UserUpdateDto userDto) {
+        val user = userRepository.findById(userDto.getId())
+                .orElseThrow(() -> new ReservationAppException("user not found "));
+        Set<RoleEntity> currentRoles = user.getRoles();
+        Set<RoleEntity> newRoles = userDto.getRoles().stream().map(roleDto -> {
+            return roleService.findByName(roleDto.getName());
+        }).collect(Collectors.toSet());
+        currentRoles.addAll(newRoles);
+        user.setRoles(currentRoles);
+
+        return userMapper.userToUserUpdateDto(userRepository.save(user));
+    }
+
+    @Override
     public String authenticate(LoginUser loginUser) {
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -92,16 +111,20 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION
         Optional.ofNullable(userRepository.findByUsername(userDto.getUsername()))
                 .ifPresent(user -> {
-                    throw new ReservationAppException("User already exists!");
+                    throw new ReservationAppException("User with username already exists!");
                 });
         //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
-        Optional.ofNullable(passwordUtil.checkPasswordValidation(userDto.getPassword()))
-                .ifPresent(password -> {
-                    throw new PasswordNotValidException(password);
-                });
+        if (!passwordValidation.isValid(userDto.getPassword())) {
+            throw new PasswordNotValidException(Arrays.asList("Password doesn't meet security!"));
+        }
+        //        Optional.ofNullable(passwordUtil.checkPasswordValidation(userDto.getPassword()))
+//                .ifPresent(password -> {
+//                    throw new PasswordNotValidException(password);
+//                });
+
         //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
-        if (!passwordUtil.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
-            throw new ReservationAppException("Passwords do not match!");
+        if (!passwordValidation.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
+            throw new PasswordNotValidException(Arrays.asList("Passwords do not match!"));
         }
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
         RoleEntity role = roleService.findByName(Role.USER.name());

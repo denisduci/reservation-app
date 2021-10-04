@@ -13,7 +13,8 @@ import java.util.List;
 @Repository
 public interface DoctorRepository extends CrudRepository<DoctorEntity, Long> {
 
-    @Query(value = "Select new com.ikub.reservationapp.doctors.dto.DoctorReportDto(d.firstName, count(d)) FROM AppointmentEntity a JOIN a.doctor d GROUP BY d.firstName ORDER BY COUNT(d) DESC")
+    //@Query(value = "Select new com.ikub.reservationapp.doctors.dto.DoctorReportDto(d.firstName, count(d)) FROM AppointmentEntity a JOIN a.doctor d GROUP BY d.firstName ORDER BY COUNT(d) DESC")
+    @Query(value = "Select new com.ikub.reservationapp.doctors.dto.DoctorReportDto(d.firstName, count(d)) FROM AppointmentEntity a JOIN a.doctor d GROUP BY a.appointmentDate ORDER BY a.appointmentDate DESC")
     List<DoctorReportDto> findByOrderByDoctorDesc();
 
     @Query(value = "SELECT d FROM DoctorEntity d WHERE d NOT IN (select e FROM AppointmentEntity a JOIN a.doctor e where (a.startTime >=:start AND a.endTime <=:end) OR (:start BETWEEN a.startTime AND a.endTime))")

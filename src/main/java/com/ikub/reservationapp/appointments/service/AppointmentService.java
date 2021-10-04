@@ -21,10 +21,11 @@ public interface AppointmentService {
     List<AppointmentDto> findByStatus(Status status);
     AppointmentDto updateAppointment(AppointmentDto appointmentDto);
     AppointmentDateHourDto doctorAvailableTime(Long id);
+    String updateDefaultFeedback();
 
     List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate);
-    AppointmentDto changeDoctor(Long id, AppointmentDto newAppointmentDto);
-    AppointmentDto updateAppointmentFeedback(Long id, AppointmentDto appointmentDto);
+    AppointmentDto changeDoctor(AppointmentDto newAppointmentDto);
+    AppointmentDto updateAppointmentFeedback(AppointmentDto appointmentDto);
     AppointmentEntity findById(Long id) throws AppointmentNotFoundException;
     List<AppointmentDto> findByPatient(Long patientId);
     List<AppointmentDto> findByDoctor(Long doctorId);

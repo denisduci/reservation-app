@@ -36,6 +36,13 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public List<DoctorReportDto> findDoctors() {
+        //get current date
+        //doctor_id     | count_date
+        //5             | 2021-09-30
+        //7             | 2021-08-31
+        //5             | 2009-04-28
+        //7             | 2009-04-27
+
         return doctorRepository.findByOrderByDoctorDesc();
     }
 

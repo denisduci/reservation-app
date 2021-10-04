@@ -5,37 +5,32 @@ import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.appointments.mapper.AppointmentMapper;
 import com.ikub.reservationapp.appointments.utils.DateUtil;
+import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.enums.Status;
-import com.ikub.reservationapp.doctors.dto.DoctorDto;
 import com.ikub.reservationapp.doctors.mapper.DoctorMapper;
 import com.ikub.reservationapp.doctors.service.DoctorService;
 import com.ikub.reservationapp.patients.entity.PatientEntity;
 import com.ikub.reservationapp.patients.mapper.PatientMapper;
 import com.ikub.reservationapp.patients.service.PatientService;
+import com.ikub.reservationapp.users.service.RoleService;
 import org.apache.commons.lang3.StringUtils;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
-import com.ikub.reservationapp.doctors.exception.DoctorNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
-import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
-import com.ikub.reservationapp.doctors.repository.DoctorRepository;
-import com.ikub.reservationapp.patients.repository.PatientRepository;
 import lombok.val;
 import com.ikub.reservationapp.doctors.entity.DoctorEntity;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.NamedParameterJdbcOperationsDependsOnPostProcessor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
@@ -48,6 +43,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Autowired
     private PatientService patientService;
+
+    @Autowired
+    private RoleService roleService;
 
     @Autowired
     private DoctorMapper doctorMapper;
@@ -125,6 +123,21 @@ public class AppointmentServiceImpl implements AppointmentService {
         return allAppointments;
     }
 
+    @Transactional
+    //@Scheduled(cron = "0 0 0 * * *")
+    @Override
+    public String updateDefaultFeedback() {
+        LocalDate previousDate = LocalDate.now().minusDays(1);
+        List<AppointmentDto> previousAppointments = findByAppointmentDate(previousDate);
+        previousAppointments.forEach(appointmentDto -> {
+            if (StringUtils.isEmpty(appointmentDto.getFeedback())) {
+                appointmentDto.setFeedback("Default Feedback");
+                appointmentRepository.save(appointmentMapper.appointmentDtoToAppointment(appointmentDto));
+            }
+        });
+        return "Updated succesfully";
+    }
+
     @Override
     public AppointmentDto createAppointment(AppointmentDto appointmentDto) {
         DoctorEntity doctor = doctorMapper.doctorDtoToDoctor(
@@ -184,9 +197,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto updateAppointment(AppointmentDto appointmentDto) {
         val appointment = findById(appointmentDto.getId());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (appointmentDto.getStatus() == Status.DONE) {
-            if (!StringUtils.isEmpty(appointment.getFeedback())) {
-                appointment.setStatus(Status.DONE);
+            if (roleService.hasRole(Role.SECRETARY.getRole()) && !StringUtils.isEmpty(appointment.getFeedback())) {
+                appointment.setStatus(appointmentDto.getStatus());
                 return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
             }
             throw new ReservationAppException("Cannot update to DONE. No feedback from doctor!");
@@ -203,8 +217,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto changeDoctor(Long id, AppointmentDto newAppointmentDto) {
-        val appointment = findById(id);
+    public AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) {
+        val appointment = findById(newAppointmentDto.getId());
         val doctorDto = doctorService.findById(newAppointmentDto.getDoctor().getId());
         appointment.setDoctor(doctorMapper.doctorDtoToDoctor(doctorDto));
         appointment.setStatus(Status.UPDATED);
@@ -212,8 +226,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto updateAppointmentFeedback(Long id, AppointmentDto appointmentDto) {
-        val appointment = findById(id);
+    public AppointmentDto updateAppointmentFeedback(AppointmentDto appointmentDto) {
+        val appointment = findById(appointmentDto.getId());
         appointment.setFeedback(appointmentDto.getFeedback());
         return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
     }

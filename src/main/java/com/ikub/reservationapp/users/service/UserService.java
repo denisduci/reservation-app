@@ -1,6 +1,7 @@
 package com.ikub.reservationapp.users.service;
 
 import com.ikub.reservationapp.users.dto.UserDto;
+import com.ikub.reservationapp.users.dto.UserUpdateDto;
 import com.ikub.reservationapp.users.entity.UserEntity;
 import com.ikub.reservationapp.common.model.LoginUser;
 
@@ -11,4 +12,5 @@ public interface UserService {
     UserDto save(UserDto user);
     List<UserDto> findAll();
     UserEntity findOne(String username);
+    UserUpdateDto updateUser(UserUpdateDto userDto);
 }

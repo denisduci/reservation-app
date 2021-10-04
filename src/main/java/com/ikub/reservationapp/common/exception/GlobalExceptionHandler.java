@@ -4,11 +4,9 @@ import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundExcepti
 import com.ikub.reservationapp.common.model.ExceptionMessage;
 import com.ikub.reservationapp.doctors.exception.DoctorNotFoundException;
 import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
-import jdk.nashorn.internal.ir.LiteralNode;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,7 +14,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -44,7 +41,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(value = PasswordNotValidException.class)
     public ResponseEntity<ExceptionMessage> getExceptions(PasswordNotValidException passwordNotValidException) {
         List<String> stringParts = Arrays.asList(passwordNotValidException.getMessage().split(","));
-        //List<Object> exceptionList = new ArrayList<>();
         List<String> details = new ArrayList<>();
 
         stringParts.forEach(item -> {
@@ -53,15 +49,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ExceptionMessage exception = new ExceptionMessage();
         exception.setMessage("Validation Failed");
         exception.setDetails(details);
-//        stringParts.stream().map(item -> {
-//            ExceptionMessage exceptionMessage = new ExceptionMessage();
-//            //exceptionMessage.setMessage(item);
-//            exceptionMessage.setMessage(item);
-//            //details.add(item);
-//            //exceptionMessage.setDetails(details);
-//            exceptionList.add(exceptionMessage);
-//            return exceptionList;
-//        }).collect(Collectors.toList());
 
         return new ResponseEntity<>(exception, HttpStatus.BAD_REQUEST);
     }
