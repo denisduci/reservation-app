@@ -1,15 +1,15 @@
 package com.ikub.reservationapp.patients.controller;
 
-import com.ikub.reservationapp.patients.dto.PatientDto;
-import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
-import com.ikub.reservationapp.patients.mapper.PatientMapper;
 import com.ikub.reservationapp.patients.service.PatientService;
+import com.ikub.reservationapp.users.dto.UserDto;
+import com.ikub.reservationapp.users.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
 import java.util.List;
 
 @Slf4j
@@ -19,34 +19,20 @@ public class PatientController {
 
     @Autowired
     private PatientService patientService;
-
     @Autowired
-    private PatientMapper patientMapper;
+    private UserService userService;
 
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SECRETARY')")
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllPatients(){
+        log.info("Retrieving all patients...");
+        return new ResponseEntity<>(patientService.findAllPatients(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<PatientDto> savePatient(@RequestBody PatientDto patientDto) {
+    public ResponseEntity<UserDto> savePatient(@Valid @RequestBody UserDto userDto) {
         log.info("Saving patient...");
-        return new ResponseEntity<>(patientService.save(patientDto), HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<PatientDto> getPatientById(@PathVariable("id") Long id) throws PatientNotFoundException {
-        log.info("Retrieving patient by id...");
-        val patient = patientService.findById(id);
-        return new ResponseEntity<>(patientMapper.patientToPatientDto(patient), HttpStatus.OK);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<PatientDto>> searchPatient( @RequestParam("firstname") String firstName,
-                                                           @RequestParam("lastname") String lastName) throws PatientNotFoundException {
-        log.info("Searching for patient...");
-        return new ResponseEntity<>(patientService.search(firstName, lastName), HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<PatientDto> updatePatient(@PathVariable("id") Long id,
-                                                    @RequestBody PatientDto patientDto) throws PatientNotFoundException {
-        log.info("Updating patient...");
-        return new ResponseEntity<>(patientService.updatePatient(id, patientDto), HttpStatus.OK);
+        return new ResponseEntity<>(userService.save(userDto), HttpStatus.OK);
     }
 }

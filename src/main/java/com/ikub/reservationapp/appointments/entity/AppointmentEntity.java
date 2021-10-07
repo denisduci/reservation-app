@@ -1,13 +1,9 @@
 package com.ikub.reservationapp.appointments.entity;
 
-import com.ikub.reservationapp.doctors.entity.DoctorEntity;
-import com.ikub.reservationapp.patients.entity.PatientEntity;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.common.model.BaseEntity;
+import com.ikub.reservationapp.users.entity.UserEntity;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,9 +22,9 @@ public class AppointmentEntity extends BaseEntity {
     private Status status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private DoctorEntity doctor;
+    private UserEntity doctor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private PatientEntity patient;
+    private UserEntity patient;
 
 }

@@ -1,5 +1,6 @@
 package com.ikub.reservationapp.users.controller;
 
+import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.model.AuthToken;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.common.model.LoginUser;
@@ -12,7 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -22,10 +26,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @GetMapping("/refreshtoken")
+    public AuthToken generateRefreshToken(HttpServletRequest request) throws AuthenticationException {
+        log.info("Generating refresh token...");
+        return userService.generateRefreshToken(request);
+    }
+
     @PostMapping("/authenticate")
     public ResponseEntity<AuthToken> generateToken(@Valid @RequestBody LoginUser loginUser) throws AuthenticationException {
         log.info("Authenticating user...");
-        return new ResponseEntity<>(new AuthToken(userService.authenticate(loginUser)), HttpStatus.OK);
+        return new ResponseEntity<>(userService.authenticate(loginUser), HttpStatus.OK);
     }
 
     @PostMapping("/register")
@@ -34,11 +44,17 @@ public class UserController {
         return new ResponseEntity<>(userService.save(userDto), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    //@PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping
     public ResponseEntity<UserUpdateDto> addRoleToUser(@Valid @RequestBody UserUpdateDto userDto) {
         log.info("Updating user...");
         return new ResponseEntity<>(userService.updateUser(userDto), HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getUsersByRole() {
+        log.info("Registering user...");
+        return new ResponseEntity<>(userService.findUsersByRole(Role.DOCTOR.name()), HttpStatus.OK);
     }
 
 }

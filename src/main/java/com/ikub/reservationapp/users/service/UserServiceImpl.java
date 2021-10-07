@@ -5,63 +5,68 @@ import java.util.stream.Collectors;
 import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
+import com.ikub.reservationapp.common.model.AuthToken;
 import com.ikub.reservationapp.security.TokenProvider;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.users.dto.UserUpdateDto;
 import com.ikub.reservationapp.users.entity.RoleEntity;
 import com.ikub.reservationapp.users.entity.UserEntity;
 import com.ikub.reservationapp.common.model.LoginUser;
+import com.ikub.reservationapp.users.exception.UserNotFoundException;
 import com.ikub.reservationapp.users.mapper.RoleMapper;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
 import com.ikub.reservationapp.users.utils.PasswordValidationUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Service(value = "userService")
+@Slf4j
 public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Autowired
     private RoleService roleService;
-
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
-
     @Autowired
     private UserMapper userMapper;
-
     @Autowired
     private RoleMapper roleMapper;
-
     @Autowired
     private AuthenticationManager authenticationManager;
-
     @Autowired
     private TokenProvider jwtTokenUtil;
-
     @Autowired
     private PasswordValidationUtil passwordValidation;
 
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity user = Optional.of(userRepository.findByUsername(username))
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid username or password"));
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), getAuthority(user));
+    public UserDetails loadUserByUsername(String username)  {
+//        UserEntity user = Optional.of(userRepository.findByUsername(username))
+//                .orElseThrow(() -> new UserNotFoundException("No user found with this username"));
+        UserEntity user = userRepository.findByUsername(username);
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(), user.getPassword(), getAuthorities(user));
     }
 
-    private Set<SimpleGrantedAuthority> getAuthority(UserEntity user) {
+    private Set<SimpleGrantedAuthority> getAuthorities(UserEntity user) {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         user.getRoles().forEach(role -> {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
@@ -69,33 +74,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return authorities;
     }
 
-    public List<UserDto> findAll() {
-        return userRepository.findAll()
-                .stream().map(user -> userMapper.userToUserDto(user))
-                .collect(Collectors.toList());
-    }
-
     @Override
-    public UserEntity findOne(String username) {
-        return userRepository.findByUsername(username);
-    }
-
-    @Override
-    public UserUpdateDto updateUser(UserUpdateDto userDto) {
-        val user = userRepository.findById(userDto.getId())
-                .orElseThrow(() -> new ReservationAppException("user not found "));
-        Set<RoleEntity> currentRoles = user.getRoles();
-        Set<RoleEntity> newRoles = userDto.getRoles().stream().map(roleDto -> {
-            return roleService.findByName(roleDto.getName());
-        }).collect(Collectors.toSet());
-        currentRoles.addAll(newRoles);
-        user.setRoles(currentRoles);
-
-        return userMapper.userToUserUpdateDto(userRepository.save(user));
-    }
-
-    @Override
-    public String authenticate(LoginUser loginUser) {
+    public AuthToken authenticate(LoginUser loginUser) throws AuthenticationException {
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginUser.getUsername(),
@@ -103,6 +83,40 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                 ));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtTokenUtil.generateToken(authentication);
+    }
+
+    @Override
+    public AuthToken generateRefreshToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        AuthToken authToken = new AuthToken();
+        String username = null;
+        String refreshToken = null;
+        if (header != null && header.startsWith("Bearer ")) {
+            refreshToken = header.replace("Bearer ", "");
+            try {
+                username = jwtTokenUtil.getUsernameFromToken(refreshToken);
+            } catch (IllegalArgumentException e) {
+                log.error("An error occurred while fetching Username from Token", e);
+            } catch (ExpiredJwtException e) {
+                log.warn("The token has expired", e);
+            } catch (SignatureException e) {
+                log.error("Authentication Failed. Username or Password not valid.");
+            }
+        } else {
+            log.warn("Couldn't find bearer string, header will be ignored");
+        }
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            UserDetails userDetails = loadUserByUsername(username);
+
+            if (jwtTokenUtil.validateToken(refreshToken, userDetails)) {
+                UsernamePasswordAuthenticationToken authentication = jwtTokenUtil.getAuthenticationToken(refreshToken, SecurityContextHolder.getContext().getAuthentication(), userDetails);
+                String accessToken = jwtTokenUtil.generateToken(authentication).getAccessToken();
+                authToken.setAccessToken(accessToken);
+                authToken.setRefreshToken(refreshToken);
+            }
+        }
+        return authToken;
     }
 
     @Override
@@ -127,14 +141,54 @@ public class UserServiceImpl implements UserDetailsService, UserService {
             throw new PasswordNotValidException(Arrays.asList("Passwords do not match!"));
         }
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
-        RoleEntity role = roleService.findByName(Role.USER.name());
+        RoleEntity role = roleService.findByName(Role.PATIENT.name());
         Set<RoleEntity> roles = new HashSet<>();
         roles.add(role);
-//        if (user.getEmail().split("@")[1].equals("admin")) {
-//            role = roleService.findByName(Role.ADMIN.name());
-//            roleSet.add(role);
-//        }
         userEntity.setRoles(roles);
         return userMapper.userToUserDto(userRepository.save(userEntity));
+    }
+
+    public List<UserDto> findAll() {
+        return userRepository.findAll()
+                .stream().map(user -> userMapper.userToUserDto(user))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserEntity findOne(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public UserDto findById(Long id) {
+        return userMapper.userToUserDto(userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found exception!")));
+    }
+
+    @Override
+    public UserUpdateDto updateUser(UserUpdateDto userDto) {
+        val user = userRepository.findById(userDto.getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found exception! "));
+        Set<RoleEntity> currentRoles = user.getRoles();
+        Set<RoleEntity> newRoles = userDto.getRoles().stream().map(roleDto -> {
+            return roleService.findByName(roleDto.getName());
+        }).collect(Collectors.toSet());
+        currentRoles.addAll(newRoles);
+        user.setRoles(currentRoles);
+
+        return userMapper.userToUserUpdateDto(userRepository.save(user));
+    }
+
+    @Override
+    public List<UserDto> findUsersByRole(String roleName) {
+        return userRepository.findByRolesName(Role.DOCTOR.name()).stream().map
+                (userEntity -> userMapper.userToUserDto(userEntity))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserDto findByIdAndRole(Long id, String roleName) {
+        return userMapper.userToUserDto(userRepository.findByIdAndRolesName(id, roleName)
+                .orElseThrow(() -> new ReservationAppException("No user was found with this id and role")));
     }
 }

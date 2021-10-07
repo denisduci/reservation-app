@@ -10,12 +10,12 @@ import java.util.List;
 
 public interface AppointmentService {
 
-    public static final int START_TIME = 8;
-    public static final int END_TIME = 17;
-    public static final int DAYS_TO_ITERATE = 7;
+    int START_TIME = 8;
+    int END_TIME = 17;
+    int DAYS_TO_ITERATE = 7;
 
-    AppointmentDateHourDto findAvailableHours();
-    AppointmentDto createAppointment(AppointmentDto appointmentDto);
+    AppointmentDateHourDto findAvailableHours(); //DONE
+    AppointmentDto createAppointment(AppointmentDto appointmentDto); //DONE
     AppointmentDto cancelAppointment(AppointmentDto appointmentDto);
     List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId);
     List<AppointmentDto> findByStatus(Status status);

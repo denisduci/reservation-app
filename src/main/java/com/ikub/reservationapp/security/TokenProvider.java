@@ -1,5 +1,6 @@
 package com.ikub.reservationapp.security;
 
+import com.ikub.reservationapp.common.model.AuthToken;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -59,18 +60,28 @@ public class TokenProvider implements Serializable {
      * @param authentication
      * @return String token
      */
-    public String generateToken(Authentication authentication) {
+    public AuthToken generateToken(Authentication authentication) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
-        return Jwts.builder()
+       String refreshToken = Jwts.builder()
+               .setSubject(authentication.getName())
+               .claim(AUTHORITIES_KEY, authorities)
+               .setIssuedAt(new Date(System.currentTimeMillis()))
+               .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 8000))
+               .signWith(SignatureAlgorithm.HS256, SIGNING_KEY)
+               .compact();
+
+        String accessToken= Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 1000))
                 .signWith(SignatureAlgorithm.HS256, SIGNING_KEY)
                 .compact();
+
+        return new AuthToken(accessToken,refreshToken);
     }
 
     /**
@@ -84,7 +95,7 @@ public class TokenProvider implements Serializable {
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    UsernamePasswordAuthenticationToken getAuthenticationToken(final String token, final Authentication existingAuth, final UserDetails userDetails) {
+    public UsernamePasswordAuthenticationToken getAuthenticationToken(final String token, final Authentication existingAuth, final UserDetails userDetails) {
         final JwtParser jwtParser = Jwts.parser().setSigningKey(SIGNING_KEY);
         final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(token);
         final Claims claims = claimsJws.getBody();

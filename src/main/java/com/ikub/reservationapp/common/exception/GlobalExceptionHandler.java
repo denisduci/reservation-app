@@ -2,8 +2,7 @@ package com.ikub.reservationapp.common.exception;
 
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.model.ExceptionMessage;
-import com.ikub.reservationapp.doctors.exception.DoctorNotFoundException;
-import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
+import com.ikub.reservationapp.users.exception.UserNotFoundException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +17,9 @@ import java.util.*;
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(value = PatientNotFoundException.class)
-    public ResponseEntity patientNotFoundException(PatientNotFoundException patientNotFoundException) {
-        return new ResponseEntity(patientNotFoundException.getMessage(), HttpStatus.NOT_FOUND);
+    @ExceptionHandler(value = UserNotFoundException.class)
+    public ResponseEntity userNotFoundException(UserNotFoundException userNotFoundException) {
+        return new ResponseEntity(userNotFoundException.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(value = AppointmentNotFoundException.class)
@@ -28,14 +27,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity(appointmentNotFoundException.getMessage(), HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(value = DoctorNotFoundException.class)
-    public ResponseEntity doctorNotFoundException(DoctorNotFoundException doctorNotFoundException) {
-        return new ResponseEntity(doctorNotFoundException.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
     @ExceptionHandler(value = ReservationAppException.class)
     public ResponseEntity generalException(ReservationAppException reservationAppException) {
-        return new ResponseEntity(reservationAppException.getMessage(), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity(reservationAppException.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(value = PasswordNotValidException.class)

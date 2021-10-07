@@ -1,10 +1,10 @@
-package com.ikub.reservationapp.common.exception;
+package com.ikub.reservationapp.users.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReservationAppException extends RuntimeException {
+public class UserNotFoundException extends RuntimeException {
     private String message;
 }

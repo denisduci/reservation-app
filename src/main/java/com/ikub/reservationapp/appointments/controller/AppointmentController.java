@@ -1,7 +1,9 @@
 package com.ikub.reservationapp.appointments.controller;
 
-import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
-import com.ikub.reservationapp.appointments.dto.AppointmentDto;
+import com.ikub.reservationapp.appointments.dto.*;
+import com.ikub.reservationapp.appointments.dto.reports.DoctorReportDto;
+import com.ikub.reservationapp.appointments.dto.reports.WeeklyMonthlyReportDto;
+import com.ikub.reservationapp.appointments.service.reports.ReportService;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.service.AppointmentService;;
 import lombok.extern.slf4j.Slf4j;
@@ -19,29 +21,51 @@ public class AppointmentController {
 
     @Autowired
     private AppointmentService appointmentService;
+    @Autowired
+    private ReportService reportService;
 
-    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_SECRETARY')")
+    /**
+     *
+     * @return AppointmentDateHourDto all available hours for booking
+     */
+    @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN')")
     @GetMapping("/available")
     public ResponseEntity<AppointmentDateHourDto> getAllAvailableHours() {
-        log.info("Retrieving all available appointments...");
+        log.info("Retrieving all available hours...");
         return new ResponseEntity<>(appointmentService.findAvailableHours(), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_SECRETARY')")
+    /**
+     *
+     * @param appointmentDto appointment to create
+     * @return AppointmentDto the created appointment
+     */
+    @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<AppointmentDto> createAppointment(@RequestBody AppointmentDto appointmentDto) {
         log.info("Creating an appointment...");
         return new ResponseEntity<>(appointmentService.createAppointment(appointmentDto), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_SECRETARY', 'ROLE_DOCTOR')")
+    /**
+     *
+     * @param appointmentDto appointment to cancel
+     * @return AppointmentDto the canceled appointment
+     */
+    @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY', 'ROLE_DOCTOR')")
     @PutMapping("/cancel")
     public ResponseEntity<AppointmentDto> cancelAppointment(@RequestBody AppointmentDto appointmentDto) {
         log.info("Canceling an appointment...");
         return new ResponseEntity<>(appointmentService.cancelAppointment(appointmentDto), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    /**
+     *
+     * @param patientId to search appointment
+     * @param status of the appointment to search
+     * @return List<AppointmentDto> appointments of patient in this status
+     */
+    @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patientstatus/{id}")
     public ResponseEntity<List<AppointmentDto>> getAllAppointmentsByStatusAndPatient(@PathVariable("id") Long patientId,
                                                                                      @RequestParam("status") Status status) {
@@ -49,6 +73,11 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByStatusAndPatient(status, patientId), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param status of the appointment to search
+     * @return List<AppointmentDto> all appointments in this status
+     */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status")
     public ResponseEntity<List<AppointmentDto>> getAppointmentsByStatus(@RequestParam Status status) {
@@ -56,20 +85,35 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByStatus(status), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole('ROLE_USER')")
+    /**
+     *
+     * @param id of the patient
+     * @return List<AppointmentDto> list of all patient appointments in all statuses
+     */
+    @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/{id}")
     public ResponseEntity<List<AppointmentDto>> getAllAppointmentsByPatientId(@PathVariable("id") Long id) {
         log.info("Retrieving appointments by patient id...");
         return new ResponseEntity<>(appointmentService.findByPatient(id), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_DOCTOR','ROLE_USER','ROLE_SECRETARY')")
+    /**
+     *
+     * @param appointmentDto appointment to update
+     * @return AppointmentDto updated appointment
+     */
+    @PreAuthorize("hasAnyRole('ROLE_DOCTOR','ROLE_PATIENT','ROLE_SECRETARY')")
     @PutMapping
     public ResponseEntity<AppointmentDto> updateAppointment(@RequestBody AppointmentDto appointmentDto) {
         log.info("Updating appointment...");
         return new ResponseEntity<>(appointmentService.updateAppointment(appointmentDto), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param id of the doctor to search
+     * @return AppointmentDateHourDto all available hours of the specific doctor
+     */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctorHours/{id}")
     public ResponseEntity<AppointmentDateHourDto> getDoctorAvailableHours(@PathVariable Long id) {
@@ -77,6 +121,11 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.doctorAvailableTime(id), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param newAppointmentDto appointment with the new doctor
+     * @return AppointmentDto updated appointment
+     */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @PutMapping("/change")
     public ResponseEntity<AppointmentDto> changeDoctor(@RequestBody AppointmentDto newAppointmentDto) {
@@ -84,6 +133,11 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.changeDoctor(newAppointmentDto), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param id of the doctor to search
+     * @return List<AppointmentDto> all appointments of the specific doctor
+     */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/{id}")
     public ResponseEntity<List<AppointmentDto>> getAllAppointmentsByDoctorId(@PathVariable("id") Long id) {
@@ -91,6 +145,10 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByDoctor(id), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @return List<AppointmentDto> all appointments in all statuses
+     */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping
     public ResponseEntity<List<AppointmentDto>> getAllAppointments() {
@@ -98,6 +156,12 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findAllAppointments(), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param doctorId id of the doctor to search
+     * @param status status of the appointment
+     * @return List<AppointmentDto> list of all appointments in this status for the specific doctor
+     */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctorstatus/{id}")
     public ResponseEntity<List<AppointmentDto>> getAllAppointmentsByStatusAndDoctor(@PathVariable("id") Long doctorId,
@@ -106,6 +170,11 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.findByStatusAndDoctor(status, doctorId), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @param appointmentDto appointment to update feedback
+     * @return AppointmentDto with the updated feedback
+     */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @PutMapping("/feedback")
     public ResponseEntity<AppointmentDto> updateAppointmentFeedback(@RequestBody AppointmentDto appointmentDto) {
@@ -113,9 +182,36 @@ public class AppointmentController {
         return new ResponseEntity<>(appointmentService.updateAppointmentFeedback(appointmentDto), HttpStatus.OK);
     }
 
+    /**
+     *
+     * @return String message for the cron job executed
+     */
     @PutMapping("/default")
     public ResponseEntity<String> updateDefaultAppointmentFeedback() {
         log.info("Updating default appointment feedback...");
         return new ResponseEntity<>(appointmentService.updateDefaultFeedback(), HttpStatus.OK);
+    }
+
+    /**
+     *
+     * @param type of the report weekly or monthly
+     * @return List<WeeklyMonthlyReportDto> list with appointments based on @type weekly | monthly
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping("/report")
+    public ResponseEntity<List<WeeklyMonthlyReportDto>> generateReport(@RequestParam("type") String type) {
+        log.info("Generating report based on week/month...");
+        return new ResponseEntity<>(reportService.findReports(type), HttpStatus.OK);
+    }
+
+    /**
+     *
+     * @return List<DoctorReportDto> list with reports based on doctor's maximum
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping("/report/doctor")
+    public ResponseEntity<List<DoctorReportDto>> generateDoctorReport() {
+        log.info("Generating report based on doctor...");
+        return new ResponseEntity<>(reportService.findDoctorsReport(), HttpStatus.OK);
     }
 }

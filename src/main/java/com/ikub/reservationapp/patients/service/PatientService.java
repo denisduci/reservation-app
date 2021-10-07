@@ -1,15 +1,16 @@
 package com.ikub.reservationapp.patients.service;
 
-import com.ikub.reservationapp.patients.dto.PatientDto;
-import com.ikub.reservationapp.patients.entity.PatientEntity;
-import com.ikub.reservationapp.patients.exception.PatientNotFoundException;
+import com.ikub.reservationapp.common.enums.Role;
+import com.ikub.reservationapp.users.dto.UserDto;
+import org.apache.catalina.User;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
 public interface PatientService {
+//
+    List<UserDto> search(String firstName, String lastName);
 
-    PatientEntity findById(Long id) throws PatientNotFoundException;
-    PatientDto save(PatientDto patientDto);
-    PatientDto updatePatient(Long id, PatientDto patientDto);
-    List<PatientDto> search(String firstName, String lastName);
+//    UserDto findPatientWithId(Long id);
+    List<UserDto> findAllPatients();
 }

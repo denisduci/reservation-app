@@ -7,22 +7,17 @@ import com.ikub.reservationapp.appointments.mapper.AppointmentMapper;
 import com.ikub.reservationapp.appointments.utils.DateUtil;
 import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.enums.Status;
-import com.ikub.reservationapp.doctors.mapper.DoctorMapper;
 import com.ikub.reservationapp.doctors.service.DoctorService;
-import com.ikub.reservationapp.patients.entity.PatientEntity;
-import com.ikub.reservationapp.patients.mapper.PatientMapper;
 import com.ikub.reservationapp.patients.service.PatientService;
+import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.service.RoleService;
+import com.ikub.reservationapp.users.service.UserService;
 import org.apache.commons.lang3.StringUtils;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import lombok.val;
-import com.ikub.reservationapp.doctors.entity.DoctorEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -37,30 +32,23 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Autowired
     private AppointmentRepository appointmentRepository;
-
     @Autowired
     private DoctorService doctorService;
-
     @Autowired
     private PatientService patientService;
-
     @Autowired
     private RoleService roleService;
-
     @Autowired
-    private DoctorMapper doctorMapper;
-
+    private UserService userService;
     @Autowired
     private AppointmentMapper appointmentMapper;
-
     @Autowired
-    private PatientMapper patientMapper;
-
+    private UserMapper userMapper;
     @Autowired
     private DateUtil dateUtil;
 
     @Override
-    public AppointmentDateHourDto findAvailableHours() {
+    public AppointmentDateHourDto findAvailableHours() {//DONE
         Map<LocalDate, List<LocalDateTime>> allAvailableAppointmentDatesAndHours = new HashMap<>();
         List<LocalDateTime> reservedHours = new ArrayList<>();
         val datesToIterate = dateUtil.datesFromNowToSpecificDay(AppointmentService.DAYS_TO_ITERATE);
@@ -91,11 +79,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDateHourDto doctorAvailableTime(Long id) {
+    public AppointmentDateHourDto doctorAvailableTime(Long id) {//DONE
         Map<LocalDate, List<LocalDateTime>> allAvailableAppointmentDatesAndHours = new HashMap<>();
         List<LocalDateTime> reservedHours = new ArrayList<>();
 
-        val existingDoctor = doctorService.findById(id);
+        val existingDoctor = userService.findByIdAndRole(id, Role.DOCTOR.name());
         val datesToIterate = dateUtil.datesFromNowToSpecificDay(DAYS_TO_ITERATE);
 
         datesToIterate.forEach(nextDate -> {
@@ -139,26 +127,29 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto createAppointment(AppointmentDto appointmentDto) {
-        DoctorEntity doctor = doctorMapper.doctorDtoToDoctor(
-                doctorService.findById(appointmentDto.getDoctor().getId()));
+    public AppointmentDto createAppointment(AppointmentDto appointmentDto) {//DONE
+      val doctor = userService.findByIdAndRole(appointmentDto.getDoctor().getId(), Role.DOCTOR.name());
         appointmentRepository
-                .findByDoctorAvailability(doctor, appointmentDto.getStartTime(), appointmentDto.getEndTime()).ifPresent(appointmentEntity -> {
+                .findByDoctorAvailability(userMapper.userDtoToUser(doctor), appointmentDto.getStartTime(), appointmentDto.getEndTime())
+                .ifPresent(appointmentEntity -> {
             throw new ReservationAppException("Doctor is not available in this time!");
         });
         if (appointmentDto.getStartTime().getHour() < START_TIME || appointmentDto.getEndTime().getHour() >= END_TIME) {
-            throw new ReservationAppException("Appointment time is out of business hours");
+            throw new ReservationAppException("Appointment time is out of business hours!");
         }
-        PatientEntity patient = patientService.findById(appointmentDto.getPatient().getId());
-        appointmentDto.setDoctor(doctorMapper.doctorToDoctorDto(doctor));
-        appointmentDto.setPatient(patientMapper.patientToPatientDto(patient));
+        if (appointmentDto.getAppointmentDate().isBefore(LocalDate.now())) {
+            throw new ReservationAppException("The date selected is not valid. Please reserve a coming date!");
+        }
+        val patient = userService.findByIdAndRole(appointmentDto.getPatient().getId(), Role.PATIENT.name());
+        appointmentDto.setDoctor(doctor);
+        appointmentDto.setPatient(patient);
         appointmentDto.setStatus(Status.PENDING);
         return appointmentMapper.appointmentToAppointmentDto(
                 appointmentRepository.save(appointmentMapper.appointmentDtoToAppointment(appointmentDto)));
     }
 
     @Override
-    public AppointmentDto cancelAppointment(AppointmentDto appointmentDto) {
+    public AppointmentDto cancelAppointment(AppointmentDto appointmentDto) {//DONE
         val appointment = findById(appointmentDto.getId());
         val current = LocalDateTime.now();
         val next = appointment.getStartTime();
@@ -174,11 +165,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId) {
-        val patient = patientService.findById(patientId);
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(status, patient))) {
+        val patient = userService.findByIdAndRole(patientId, Role.PATIENT.name());
+        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(status, userMapper.userDtoToUser(patient)))) {
             throw new AppointmentNotFoundException("No appointment found!");
         }
-        return appointmentRepository.findByStatusAndPatient(status, patient)
+        return appointmentRepository.findByStatusAndPatient(status, userMapper.userDtoToUser(patient))
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
@@ -197,13 +188,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto updateAppointment(AppointmentDto appointmentDto) {
         val appointment = findById(appointmentDto.getId());
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (appointmentDto.getStatus() == Status.DONE) {
             if (roleService.hasRole(Role.SECRETARY.getRole()) && !StringUtils.isEmpty(appointment.getFeedback())) {
                 appointment.setStatus(appointmentDto.getStatus());
                 return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
             }
-            throw new ReservationAppException("Cannot update to DONE. No feedback from doctor!");
+            throw new ReservationAppException("Cannot update to DONE. No feedback from doctor or role not allowed!");
         }
         appointment.setStatus(appointmentDto.getStatus());
         return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
@@ -219,8 +209,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) {
         val appointment = findById(newAppointmentDto.getId());
-        val doctorDto = doctorService.findById(newAppointmentDto.getDoctor().getId());
-        appointment.setDoctor(doctorMapper.doctorDtoToDoctor(doctorDto));
+        val doctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
+        appointmentRepository.findByDoctorAvailability(userMapper.userDtoToUser(doctor),
+                appointment.getStartTime(), appointment.getEndTime()).ifPresent(appointmentEntity -> {
+            throw new ReservationAppException("Doctor is not available in this time!");
+        });
+        appointment.setDoctor(userMapper.userDtoToUser(doctor));
         appointment.setStatus(Status.UPDATED);
         return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
     }
@@ -240,16 +234,16 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> findByPatient(Long patientId) {
-        val patient = patientService.findById(patientId);
-        return appointmentRepository.findByPatient(patient)
+        val patient = userService.findByIdAndRole(patientId,Role.PATIENT.name());
+        return appointmentRepository.findByPatient(userMapper.userDtoToUser(patient))
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<AppointmentDto> findByDoctor(Long doctorId) {
-        val doctorDto =doctorService.findById(doctorId);
-        return appointmentRepository.findByDoctor(doctorMapper.doctorDtoToDoctor(doctorDto))
+        val doctorDto = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
+        return appointmentRepository.findByDoctor(userMapper.userDtoToUser(doctorDto))
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))
                 .collect(Collectors.toList());
     }
@@ -263,8 +257,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<AppointmentDto> findByStatusAndDoctor(Status status, Long doctorId) {
-        val doctorDto =doctorService.findById(doctorId);
-        val doctor = doctorMapper.doctorDtoToDoctor(doctorDto);
+        val doctorDto = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
+        val doctor = userMapper.userDtoToUser(doctorDto);
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(status, doctor))) {
             throw new AppointmentNotFoundException("No appointment found!");
         }

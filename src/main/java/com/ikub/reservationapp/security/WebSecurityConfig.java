@@ -27,13 +27,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UnauthorizedEntryPoint unauthorizedEntryPoint;
-
+    //1-AuthenticationManager takes AuthenticationManagerBuilder which will use userDetailsService to search a user.
+    /**
+     *
+     * @param auth | tell Spring Security to load user through the @userDetailsService
+     * @throws Exception
+     */
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(encoder());
     }
-
-    //1-AuthenticationManager takes AuthenticationManagerBuilder which will use userDetailsService to search a user.
 
     /**
      * @param http

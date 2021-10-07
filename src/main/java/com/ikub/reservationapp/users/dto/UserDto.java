@@ -10,6 +10,12 @@ public class UserDto {
 
     private Long id;
 
+    @NotBlank(message = "First name must not be empty")
+    private String firstName;
+
+    @NotBlank(message = "Last name must not be empty")
+    private String lastName;
+
     @NotBlank(message = "Username must not be empty")
     @Length(min = 3, message = "Username is too short")
     @Length(max = 40, message = "Username is too long")
@@ -32,6 +38,4 @@ public class UserDto {
     @Pattern(regexp = "(^$|[0-9]{10})")
     private String phone;
 
-    @NotBlank(message = "Name must not be empty")
-    private String name;
 }
