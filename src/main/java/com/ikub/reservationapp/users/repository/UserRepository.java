@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface UserRepository extends CrudRepository<UserEntity, Long> {
 
     @Query(value = "select u from UserEntity u left join fetch u.roles where u.username=:userName")
-    UserEntity findByUsername(@Param("userName") String userName);
+    Optional<UserEntity> findByUsername(@Param("userName") String userName);
     List<UserEntity> findAll();
     List<UserEntity> findByRolesName(String roleName);
     Optional<UserEntity> findByIdAndRolesName(Long id, String roleName);

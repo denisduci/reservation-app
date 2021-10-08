@@ -9,6 +9,5 @@ public interface DoctorService {
 
 //    List<DoctorReportDto> findDoctors();
     List<UserDto> findAvailableDoctors(LocalDateTime start, LocalDateTime end);
-    List<UserDto> findAllDoctors();
     UserDto saveDoctor(UserDto userDto);
 }

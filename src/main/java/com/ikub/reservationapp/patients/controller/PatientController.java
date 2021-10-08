@@ -1,5 +1,6 @@
 package com.ikub.reservationapp.patients.controller;
 
+import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.patients.service.PatientService;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.users.service.UserService;
@@ -22,17 +23,27 @@ public class PatientController {
     @Autowired
     private UserService userService;
 
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SECRETARY')")
-    @GetMapping
-    public ResponseEntity<List<UserDto>> getAllPatients(){
-        log.info("Retrieving all patients...");
-        return new ResponseEntity<>(patientService.findAllPatients(), HttpStatus.OK);
-    }
-
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<UserDto> savePatient(@Valid @RequestBody UserDto userDto) {
         log.info("Saving patient...");
         return new ResponseEntity<>(userService.save(userDto), HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SECRETARY')")
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllPatients() {
+        log.info("Retrieving all patients...");
+        return new ResponseEntity<>(userService.findUsersByRole(Role.PATIENT.name()), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SECRETARY','ROLE_DOCTOR')")
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDto>> searchPatient(@RequestParam("firstname") String firstName,
+                                                       @RequestParam("lastname") String lastName) {
+        log.info("Searching for patient with firstName {} and/or lastName {} ...", firstName, lastName);
+        return new ResponseEntity<>(patientService.search(firstName, lastName), HttpStatus.OK);
+    }
+
+
 }

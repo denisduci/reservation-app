@@ -48,13 +48,6 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public List<UserDto> findAllDoctors() {
-        return doctorRepository.findByRolesName(Role.DOCTOR.name()).stream().map(userEntity ->
-                userMapper.userToUserDto(userEntity))
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public UserDto saveDoctor(UserDto userDto) {
         val userEntity = userMapper.userDtoToUser(userDto);
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION

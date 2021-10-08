@@ -14,9 +14,9 @@ public interface UserService {
     AuthToken generateRefreshToken(HttpServletRequest request);
     UserDto save(UserDto user);
     List<UserDto> findAll();
-    UserEntity findOne(String username);
     UserDto findById(Long id);
     UserUpdateDto updateUser(UserUpdateDto userDto);
     List<UserDto> findUsersByRole(String roleName);
     UserDto findByIdAndRole(Long id, String roleName);
+    UserDto findByUsername(String username);
 }

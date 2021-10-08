@@ -20,7 +20,6 @@ public interface AppointmentService {
     List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId);
     List<AppointmentDto> findByStatus(Status status);
     AppointmentDto updateAppointment(AppointmentDto appointmentDto);
-    AppointmentDateHourDto doctorAvailableTime(Long id);
     String updateDefaultFeedback();
 
     List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate);

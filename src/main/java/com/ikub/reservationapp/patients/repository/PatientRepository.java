@@ -12,6 +12,4 @@ public interface PatientRepository extends CrudRepository<UserEntity, Long> {
     @Nullable
     List<UserEntity> findByFirstNameOrLastNameContainingAllIgnoreCase(@Nullable String firstName, @Nullable String lastName);
 
-    List<UserEntity> findByRolesName(String roleName);
-
 }

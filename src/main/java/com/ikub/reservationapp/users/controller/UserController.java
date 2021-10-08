@@ -10,10 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
@@ -51,10 +49,16 @@ public class UserController {
         return new ResponseEntity<>(userService.updateUser(userDto), HttpStatus.OK);
     }
 
-    @GetMapping
-    public ResponseEntity<List<UserDto>> getUsersByRole() {
-        log.info("Registering user...");
-        return new ResponseEntity<>(userService.findUsersByRole(Role.DOCTOR.name()), HttpStatus.OK);
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        log.info("Get all users...");
+        return new ResponseEntity<>(userService.findAll(), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDto> getAllUsers(@PathVariable("id") Long id) {
+        log.info("Get user by id {}...", id);
+        return new ResponseEntity<>(userService.findById(id), HttpStatus.OK);
     }
 
 }

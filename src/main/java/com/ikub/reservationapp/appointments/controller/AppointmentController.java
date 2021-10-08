@@ -26,9 +26,9 @@ public class AppointmentController {
 
     /**
      *
-     * @return AppointmentDateHourDto all available hours for booking
+     * @return AppointmentDateHourDto all available hours for booking. If doctor is logged in the return doctor available hours
      */
-    @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN','ROLE_DOCTOR')")
     @GetMapping("/available")
     public ResponseEntity<AppointmentDateHourDto> getAllAvailableHours() {
         log.info("Retrieving all available hours...");
@@ -107,18 +107,6 @@ public class AppointmentController {
     public ResponseEntity<AppointmentDto> updateAppointment(@RequestBody AppointmentDto appointmentDto) {
         log.info("Updating appointment...");
         return new ResponseEntity<>(appointmentService.updateAppointment(appointmentDto), HttpStatus.OK);
-    }
-
-    /**
-     *
-     * @param id of the doctor to search
-     * @return AppointmentDateHourDto all available hours of the specific doctor
-     */
-    @PreAuthorize("hasRole('ROLE_DOCTOR')")
-    @GetMapping("/doctorHours/{id}")
-    public ResponseEntity<AppointmentDateHourDto> getDoctorAvailableHours(@PathVariable Long id) {
-        log.info("Retrieving doctor available appointments...");
-        return new ResponseEntity<>(appointmentService.doctorAvailableTime(id), HttpStatus.OK);
     }
 
     /**

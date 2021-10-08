@@ -17,8 +17,6 @@ import com.ikub.reservationapp.users.mapper.RoleMapper;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
 import com.ikub.reservationapp.users.utils.PasswordValidationUtil;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.SignatureException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +30,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Service(value = "userService")
 @Slf4j
+@Service(value = "userService")
 public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Autowired
@@ -58,10 +55,9 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Autowired
     private PasswordValidationUtil passwordValidation;
 
-    public UserDetails loadUserByUsername(String username)  {
-//        UserEntity user = Optional.of(userRepository.findByUsername(username))
-//                .orElseThrow(() -> new UserNotFoundException("No user found with this username"));
-        UserEntity user = userRepository.findByUsername(username);
+    public UserDetails loadUserByUsername(String username) {
+        UserEntity user = userMapper.userDtoToUser(findByUsername(username));
+        log.info("Inside loadUserByUsername, found user {}", user);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(), user.getPassword(), getAuthorities(user));
     }
@@ -82,41 +78,12 @@ public class UserServiceImpl implements UserDetailsService, UserService {
                         loginUser.getPassword()
                 ));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        return jwtTokenUtil.generateToken(authentication);
+        return jwtTokenUtil.generateTokenWithAuthentication(authentication);
     }
 
     @Override
     public AuthToken generateRefreshToken(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        AuthToken authToken = new AuthToken();
-        String username = null;
-        String refreshToken = null;
-        if (header != null && header.startsWith("Bearer ")) {
-            refreshToken = header.replace("Bearer ", "");
-            try {
-                username = jwtTokenUtil.getUsernameFromToken(refreshToken);
-            } catch (IllegalArgumentException e) {
-                log.error("An error occurred while fetching Username from Token", e);
-            } catch (ExpiredJwtException e) {
-                log.warn("The token has expired", e);
-            } catch (SignatureException e) {
-                log.error("Authentication Failed. Username or Password not valid.");
-            }
-        } else {
-            log.warn("Couldn't find bearer string, header will be ignored");
-        }
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails = loadUserByUsername(username);
-
-            if (jwtTokenUtil.validateToken(refreshToken, userDetails)) {
-                UsernamePasswordAuthenticationToken authentication = jwtTokenUtil.getAuthenticationToken(refreshToken, SecurityContextHolder.getContext().getAuthentication(), userDetails);
-                String accessToken = jwtTokenUtil.generateToken(authentication).getAccessToken();
-                authToken.setAccessToken(accessToken);
-                authToken.setRefreshToken(refreshToken);
-            }
-        }
-        return authToken;
+        return jwtTokenUtil.generateRefreshToken(request);
     }
 
     @Override
@@ -148,15 +115,11 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userMapper.userToUserDto(userRepository.save(userEntity));
     }
 
+    @Override
     public List<UserDto> findAll() {
         return userRepository.findAll()
                 .stream().map(user -> userMapper.userToUserDto(user))
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public UserEntity findOne(String username) {
-        return userRepository.findByUsername(username);
     }
 
     @Override
@@ -190,5 +153,11 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     public UserDto findByIdAndRole(Long id, String roleName) {
         return userMapper.userToUserDto(userRepository.findByIdAndRolesName(id, roleName)
                 .orElseThrow(() -> new ReservationAppException("No user was found with this id and role")));
+    }
+
+    @Override
+    public UserDto findByUsername(String username) {
+        return userMapper.userToUserDto(userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("No user found with this username")));
     }
 }

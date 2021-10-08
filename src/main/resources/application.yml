@@ -17,7 +17,9 @@ spring:
 
 jwt:
   token:
-    validity: 18000
+    refresh:
+          validity: 86400 #seconds | 24h
+    validity: 18000 #seconds | 5h
     prefix: Bearer
   signing:
       key: signingkey

@@ -1,6 +1,7 @@
 package com.ikub.reservationapp.appointments.utils;
 
 import com.ikub.reservationapp.appointments.service.AppointmentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,10 +11,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Component
 public class DateUtil {
 
     public List<LocalDate> datesFromNowToSpecificDay(int limitOfDays) {
+        log.info("Inside datesFromNowToSpecificDay... ");
         long numOfDaysBetween = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.now().plusDays(limitOfDays));
         return IntStream.iterate(0, i -> i + 1)
                 .limit(numOfDaysBetween)
@@ -31,6 +34,7 @@ public class DateUtil {
             availableHours.add(availableTime);
 
         }
+        log.info("All available hours for date: -> {} are: -> {}", nextDate, availableHours);
         return availableHours;
     }
 }

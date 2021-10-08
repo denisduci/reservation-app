@@ -1,9 +1,12 @@
 package com.ikub.reservationapp.users.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ikub.reservationapp.common.enums.Role;
+import com.ikub.reservationapp.users.entity.RoleEntity;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.*;
+import java.util.Set;
 
 @Data
 public class UserDto {
@@ -37,5 +40,7 @@ public class UserDto {
     @Size(min = 10, max = 10)
     @Pattern(regexp = "(^$|[0-9]{10})")
     private String phone;
+
+    private Set<RoleEntity> roles;
 
 }
