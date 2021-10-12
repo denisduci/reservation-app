@@ -5,6 +5,9 @@ import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
+import com.ikub.reservationapp.common.exception.ReservationAppException;
+import jdk.management.resource.ResourceRequestDeniedException;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -15,15 +18,15 @@ public interface AppointmentService {
     int DAYS_TO_ITERATE = 7;
 
     AppointmentDateHourDto findAvailableHours(); //DONE
-    AppointmentDto createAppointment(AppointmentDto appointmentDto); //DONE
-    AppointmentDto cancelAppointment(AppointmentDto appointmentDto);
-    List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId);
+    AppointmentDto createAppointment(AppointmentDto appointmentDto) throws ReservationAppException; //DONE
+    AppointmentDto cancelAppointment(AppointmentDto appointmentDto) throws ReservationAppException;
+    List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId) throws AppointmentNotFoundException;
     List<AppointmentDto> findByStatus(Status status);
     AppointmentDto updateAppointment(AppointmentDto appointmentDto);
     String updateDefaultFeedback();
 
     List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate);
-    AppointmentDto changeDoctor(AppointmentDto newAppointmentDto);
+    AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;
     AppointmentDto updateAppointmentFeedback(AppointmentDto appointmentDto);
     AppointmentEntity findById(Long id) throws AppointmentNotFoundException;
     List<AppointmentDto> findByPatient(Long patientId);

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ikub.reservationapp.common.model.BaseEntity;
 import com.ikub.reservationapp.common.model.Person;
 import lombok.Data;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import javax.persistence.*;
 import java.util.Set;
 
 @Entity
 @Data
 @Table(name = "users")
+@EntityListeners(AuditingEntityListener.class)
 public class UserEntity extends Person {
 
     private String username;

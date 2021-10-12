@@ -3,19 +3,32 @@ package com.ikub.reservationapp.common.exception;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.model.ExceptionMessage;
 import com.ikub.reservationapp.users.exception.UserNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.*;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    @ExceptionHandler(value = AuthenticationException.class)
+    public ResponseEntity handleAuthenticationExceptions(AuthenticationException ex) {
+        log.error("Authentication Exception: {}", ex.getMessage());
+        return new ResponseEntity(new ExceptionMessage("Bad Credentials", Collections.singletonList(ex.getMessage())), HttpStatus.UNAUTHORIZED);
+    }
 
     @ExceptionHandler(value = UserNotFoundException.class)
     public ResponseEntity userNotFoundException(UserNotFoundException userNotFoundException) {
@@ -29,7 +42,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = ReservationAppException.class)
     public ResponseEntity generalException(ReservationAppException reservationAppException) {
-        return new ResponseEntity(reservationAppException.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity(reservationAppException.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(value = PasswordNotValidException.class)

@@ -18,12 +18,13 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
 
     List<AppointmentEntity> findByStatus(Status status);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime")
+    //@Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime")
+    @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime and a.status<>2")
     List<AppointmentEntity> findByAppointmentDate(@Param("appointmentDateTime") LocalDate appointmentDate);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.doctor=:doctorId")
+    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.doctor=:doctorId AND a.status<>2")
     // working version @Query("SELECT a FROM AppointmentEntity a WHERE ((:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) OR (:appointmentStartTime BETWEEN a.startTime AND a.endTime)) AND a.doctor=:doctorId")
-    Optional<AppointmentEntity> findByDoctorAvailability(@Param("doctorId") UserEntity doctorId,
+    List<AppointmentEntity> findByDoctorAvailability(@Param("doctorId") UserEntity doctorId,
                                                          @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                          @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
     List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patient);

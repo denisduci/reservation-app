@@ -10,13 +10,14 @@ import java.util.Set;
 public class UserUpdateDto {
 
     private Long id;
-    private String username;
 //    @JsonIgnore
 //    private String password;
 //    @Transient
 //    private String confirmPassword;
+    private String firstName;
+    private String lastName;
+    private String username;
     private String email;
     private String phone;
-    private String name;
     private Set<RoleDto> roles;
 }

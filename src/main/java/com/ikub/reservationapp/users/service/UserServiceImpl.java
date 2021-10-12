@@ -28,7 +28,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -87,21 +86,17 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
-    public UserDto save(UserDto userDto) {
+    public UserDto save(UserDto userDto) throws PasswordNotValidException, ReservationAppException {
         val userEntity = userMapper.userDtoToUser(userDto);
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION
-        Optional.ofNullable(userRepository.findByUsername(userDto.getUsername()))
-                .ifPresent(user -> {
-                    throw new ReservationAppException("User with username already exists!");
-                });
+        userRepository.findByUsername(userDto.getUsername()).ifPresent(user -> {
+            throw new ReservationAppException("User with username already exists");
+        });
+
         //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
         if (!passwordValidation.isValid(userDto.getPassword())) {
             throw new PasswordNotValidException(Arrays.asList("Password doesn't meet security!"));
         }
-        //        Optional.ofNullable(passwordUtil.checkPasswordValidation(userDto.getPassword()))
-//                .ifPresent(password -> {
-//                    throw new PasswordNotValidException(password);
-//                });
 
         //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
         if (!passwordValidation.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
@@ -123,15 +118,14 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
-    public UserDto findById(Long id) {
+    public UserDto findById(Long id) throws UserNotFoundException {
         return userMapper.userToUserDto(userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found exception!")));
+                .orElseThrow(() -> new UserNotFoundException("User not found!")));
     }
 
     @Override
     public UserUpdateDto updateUser(UserUpdateDto userDto) {
-        val user = userRepository.findById(userDto.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found exception! "));
+        val user = userMapper.userDtoToUser(findById(userDto.getId()));
         Set<RoleEntity> currentRoles = user.getRoles();
         Set<RoleEntity> newRoles = userDto.getRoles().stream().map(roleDto -> {
             return roleService.findByName(roleDto.getName());
@@ -150,13 +144,13 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
-    public UserDto findByIdAndRole(Long id, String roleName) {
+    public UserDto findByIdAndRole(Long id, String roleName) throws ReservationAppException {
         return userMapper.userToUserDto(userRepository.findByIdAndRolesName(id, roleName)
                 .orElseThrow(() -> new ReservationAppException("No user was found with this id and role")));
     }
 
     @Override
-    public UserDto findByUsername(String username) {
+    public UserDto findByUsername(String username) throws UserNotFoundException {
         return userMapper.userToUserDto(userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("No user found with this username")));
     }

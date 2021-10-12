@@ -3,9 +3,11 @@ package com.ikub.reservationapp.appointments.controller;
 import com.ikub.reservationapp.appointments.dto.*;
 import com.ikub.reservationapp.appointments.dto.reports.DoctorReportDto;
 import com.ikub.reservationapp.appointments.dto.reports.WeeklyMonthlyReportDto;
+import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.appointments.service.reports.ReportService;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.service.AppointmentService;;
+import com.ikub.reservationapp.common.exception.ReservationAppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,7 +44,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<AppointmentDto> createAppointment(@RequestBody AppointmentDto appointmentDto) {
+    public ResponseEntity<AppointmentDto> createAppointment(@RequestBody AppointmentDto appointmentDto) throws ReservationAppException {
         log.info("Creating an appointment...");
         return new ResponseEntity<>(appointmentService.createAppointment(appointmentDto), HttpStatus.OK);
     }
@@ -54,7 +56,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY', 'ROLE_DOCTOR')")
     @PutMapping("/cancel")
-    public ResponseEntity<AppointmentDto> cancelAppointment(@RequestBody AppointmentDto appointmentDto) {
+    public ResponseEntity<AppointmentDto> cancelAppointment(@RequestBody AppointmentDto appointmentDto) throws ReservationAppException {
         log.info("Canceling an appointment...");
         return new ResponseEntity<>(appointmentService.cancelAppointment(appointmentDto), HttpStatus.OK);
     }
@@ -64,11 +66,12 @@ public class AppointmentController {
      * @param patientId to search appointment
      * @param status of the appointment to search
      * @return List<AppointmentDto> appointments of patient in this status
+     * @throws AppointmentNotFoundException
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patientstatus/{id}")
     public ResponseEntity<List<AppointmentDto>> getAllAppointmentsByStatusAndPatient(@PathVariable("id") Long patientId,
-                                                                                     @RequestParam("status") Status status) {
+                                                                                     @RequestParam("status") Status status) throws AppointmentNotFoundException {
         log.info("Retrieving all appointments by status and patient...");
         return new ResponseEntity<>(appointmentService.findByStatusAndPatient(status, patientId), HttpStatus.OK);
     }
@@ -80,7 +83,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status")
-    public ResponseEntity<List<AppointmentDto>> getAppointmentsByStatus(@RequestParam Status status) {
+    public ResponseEntity<List<AppointmentDto>> getAppointmentsByStatus(@RequestParam("status") Status status) {
         log.info("Retrieving appointments by status...");
         return new ResponseEntity<>(appointmentService.findByStatus(status), HttpStatus.OK);
     }
@@ -116,7 +119,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @PutMapping("/change")
-    public ResponseEntity<AppointmentDto> changeDoctor(@RequestBody AppointmentDto newAppointmentDto) {
+    public ResponseEntity<AppointmentDto> changeDoctor(@RequestBody AppointmentDto newAppointmentDto) throws ReservationAppException {
         log.info("Changing doctor for an appointment...");
         return new ResponseEntity<>(appointmentService.changeDoctor(newAppointmentDto), HttpStatus.OK);
     }

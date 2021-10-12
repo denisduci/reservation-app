@@ -1,10 +1,16 @@
 package com.ikub.reservationapp.common.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
-@AllArgsConstructor
 public class ReservationAppException extends RuntimeException {
     private String message;
+
+    public ReservationAppException(String message) {
+        super(message);
+        this.message = message;
+
+    }
+
+    public ReservationAppException() {
+
+    }
 }

@@ -1,6 +1,5 @@
 package com.ikub.reservationapp.users.controller;
 
-import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.model.AuthToken;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.common.model.LoginUser;
@@ -56,7 +55,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getAllUsers(@PathVariable("id") Long id) {
+    public ResponseEntity<UserDto> getUserById(@PathVariable("id") Long id) {
         log.info("Get user by id {}...", id);
         return new ResponseEntity<>(userService.findById(id), HttpStatus.OK);
     }

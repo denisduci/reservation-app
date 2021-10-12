@@ -4,6 +4,8 @@ import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.common.model.BaseEntity;
 import com.ikub.reservationapp.users.entity.UserEntity;
 import lombok.Data;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "appointment")
+@EntityListeners(AuditingEntityListener.class)
 public class AppointmentEntity extends BaseEntity {
 
     private LocalDate appointmentDate;
