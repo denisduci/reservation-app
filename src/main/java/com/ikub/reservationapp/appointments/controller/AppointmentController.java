@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 import java.util.List;
 
 @Slf4j
@@ -44,7 +46,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<AppointmentDto> createAppointment(@RequestBody AppointmentDto appointmentDto) throws ReservationAppException {
+    public ResponseEntity<AppointmentDto> createAppointment(@Valid @RequestBody AppointmentDto appointmentDto) throws ReservationAppException {
         log.info("Creating an appointment...");
         return new ResponseEntity<>(appointmentService.createAppointment(appointmentDto), HttpStatus.OK);
     }

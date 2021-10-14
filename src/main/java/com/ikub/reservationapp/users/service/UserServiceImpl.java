@@ -3,6 +3,8 @@ package com.ikub.reservationapp.users.service;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.ikub.reservationapp.common.enums.Role;
+import com.ikub.reservationapp.common.exception.BadRequest;
+import com.ikub.reservationapp.common.exception.NotFound;
 import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.common.model.AuthToken;
@@ -90,17 +92,17 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         val userEntity = userMapper.userDtoToUser(userDto);
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION
         userRepository.findByUsername(userDto.getUsername()).ifPresent(user -> {
-            throw new ReservationAppException("User with username already exists");
+            throw new ReservationAppException(BadRequest.USER_EXISTS.getMessage());
         });
 
         //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
         if (!passwordValidation.isValid(userDto.getPassword())) {
-            throw new PasswordNotValidException(Arrays.asList("Password doesn't meet security!"));
+            throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_SECURITY_FAIL.getMessage()));
         }
 
         //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
         if (!passwordValidation.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
-            throw new PasswordNotValidException(Arrays.asList("Passwords do not match!"));
+            throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_MATCH_FAIL.getMessage()));
         }
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
         RoleEntity role = roleService.findByName(Role.PATIENT.name());
@@ -120,7 +122,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public UserDto findById(Long id) throws UserNotFoundException {
         return userMapper.userToUserDto(userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found!")));
+                .orElseThrow(() -> new UserNotFoundException(NotFound.USER.getMessage())));
     }
 
     @Override
@@ -146,12 +148,12 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public UserDto findByIdAndRole(Long id, String roleName) throws ReservationAppException {
         return userMapper.userToUserDto(userRepository.findByIdAndRolesName(id, roleName)
-                .orElseThrow(() -> new ReservationAppException("No user was found with this id and role")));
+                .orElseThrow(() -> new ReservationAppException(NotFound.USER_WITH_ROLE.getMessage())));
     }
 
     @Override
     public UserDto findByUsername(String username) throws UserNotFoundException {
         return userMapper.userToUserDto(userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("No user found with this username")));
+                .orElseThrow(() -> new UserNotFoundException(NotFound.USERNAME.getMessage())));
     }
 }

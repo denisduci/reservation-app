@@ -13,6 +13,7 @@ import com.ikub.reservationapp.users.dto.UserDto;
 import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -81,66 +82,68 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * When appointment is created successfully
      * Result: 200 OK
      */
-//    @Test
-//    void createAppointment() {
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        UserDto doctor = new UserDto();
-//        doctor.setId(5l);
-//        UserDto patient = new UserDto();
-//        patient.setId(3l);
-//        LocalDate appointmentDate = LocalDate.of(2021, 10, 12);
-//        LocalDateTime startTime = LocalDateTime.of(2021, 10, 12, 8, 00, 0);
-//        LocalDateTime endTime = LocalDateTime.of(2021, 10, 12, 12, 00, 0);
-//        appointmentDto.setAppointmentDate(appointmentDate);
-//        appointmentDto.setStartTime(startTime);
-//        appointmentDto.setEndTime(endTime);
-//        appointmentDto.setComments("Dentist appointment");
-//        appointmentDto.setDescription("Dentist appointment");
-//        appointmentDto.setDoctor(doctor);
-//        appointmentDto.setPatient(patient);
-//        val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
-//        assertEquals(Status.PENDING, response.getStatus());
-//    }
+    @Test
+    @Disabled
+    void createAppointment() {
+        AppointmentDto appointmentDto = new AppointmentDto();
+        UserDto doctor = new UserDto();
+        doctor.setId(5l);
+        UserDto patient = new UserDto();
+        patient.setId(3l);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 12);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 12, 8, 00, 0);
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 12, 12, 00, 0);
+        appointmentDto.setAppointmentDate(appointmentDate);
+        appointmentDto.setStartTime(startTime);
+        appointmentDto.setEndTime(endTime);
+        appointmentDto.setComments("Dentist appointment");
+        appointmentDto.setDescription("Dentist appointment");
+        appointmentDto.setDoctor(doctor);
+        appointmentDto.setPatient(patient);
+        val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
+        assertEquals(Status.PENDING, response.getStatus());
+    }
 
     /**
      * When doctor is not available in the selected time!
      * Result: 400 "Doctor is not available in this time!"
      * @throws ReservationAppException
      */
-//    @Test
-//    void createAppointmentFailDoctorNotAvailable() throws ReservationAppException {
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        UserDto doctor = new UserDto();
-//        doctor.setId(5l);
-//        UserDto patient = new UserDto();
-//        patient.setId(3l);
-//        LocalDate appointmentDate = LocalDate.of(2021, 10, 12);
-//        LocalDateTime startTime = LocalDateTime.of(2021, 10, 12, 8, 00, 0);
-//        LocalDateTime endTime = LocalDateTime.of(2021, 10, 12, 12, 00, 0);
-//        appointmentDto.setAppointmentDate(appointmentDate);
-//        appointmentDto.setStartTime(startTime);
-//        appointmentDto.setEndTime(endTime);
-//        appointmentDto.setComments("Dentist appointment");
-//        appointmentDto.setDescription("Dentist appointment");
-//        appointmentDto.setDoctor(doctor);
-//        appointmentDto.setPatient(patient);
-//        //val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
-//
-//        try {
-//            mockMvc
-//                    .perform(
-//                            MockMvcRequestBuilders.post(URL)
-//                                    .header("Authorization", "Bearer " + TOKEN)
-//                                    .contentType(MediaType.APPLICATION_JSON)
-//                                    .content(JsonUtils.toJsonString(appointmentDto)))
-//                    .andExpect(status().isBadRequest())
-//                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
-//                    .andExpect(result -> assertEquals("Doctor is not available in this time!", result.getResolvedException().getMessage()))
-//                    .andReturn();
-//        } catch (Exception e) {
-//            ExceptionUtils.rethrow(e);
-//        }
-//    }
+    @Test
+    @Disabled
+    void createAppointmentFailDoctorNotAvailable() throws ReservationAppException {
+        AppointmentDto appointmentDto = new AppointmentDto();
+        UserDto doctor = new UserDto();
+        doctor.setId(5l);
+        UserDto patient = new UserDto();
+        patient.setId(3l);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 12);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 12, 8, 00, 0);
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 12, 12, 00, 0);
+        appointmentDto.setAppointmentDate(appointmentDate);
+        appointmentDto.setStartTime(startTime);
+        appointmentDto.setEndTime(endTime);
+        appointmentDto.setComments("Dentist appointment");
+        appointmentDto.setDescription("Dentist appointment");
+        appointmentDto.setDoctor(doctor);
+        appointmentDto.setPatient(patient);
+        //val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
+
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.post(URL)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(JsonUtils.toJsonString(appointmentDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Doctor is not available in this time!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
 
     /**
      * When appoitnment is out of normal business hours
@@ -148,6 +151,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * @throws ReservationAppException
      */
     @Test
+    @Disabled
     void createAppointmentFailOutOfBusinessHours() throws ReservationAppException {
         AppointmentDto appointmentDto = new AppointmentDto();
         UserDto doctor = new UserDto();
@@ -188,6 +192,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * @throws ReservationAppException
      */
     @Test
+    @Disabled
     void createAppointmentFailDateWrong() throws ReservationAppException {
         AppointmentDto appointmentDto = new AppointmentDto();
         UserDto doctor = new UserDto();
@@ -225,14 +230,15 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     /**
      * Result: list of appointments has the correct size.
      */
-//    @Test
-//    void getAllAppointments(){
-//
-//        val result = createGetAsString(URL, String.class, TOKEN);
-//        val resultList = JsonUtils.toList(result, AppointmentDto.class);
-//        assertThat(resultList, hasSize(10));
-//
-//    }
+    @Test
+    @Disabled
+    void getAllAppointments(){
+
+        val result = createGetAsString(URL, String.class, TOKEN);
+        val resultList = JsonUtils.toList(result, AppointmentDto.class);
+        assertThat(resultList, hasSize(10));
+
+    }
 
 
     /**
@@ -240,46 +246,49 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 400 "Too short time to cancel Appointment!"
      * @throws ReservationAppException
      */
-//    @Test
-//    void cancelAppointmentFailShortTime() throws ReservationAppException {
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        appointmentDto.setId(6l);
-//        try {
-//            mockMvc
-//                    .perform(
-//                            MockMvcRequestBuilders.put(URL + "/cancel")
-//                                    .header("Authorization", "Bearer " + TOKEN)
-//                                    .contentType(MediaType.APPLICATION_JSON)
-//                                    .content(JsonUtils.toJsonString(appointmentDto)))
-//                    .andExpect(status().isBadRequest())
-//                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
-//                    .andExpect(result -> assertEquals("Too short time to cancel Appointment!", result.getResolvedException().getMessage()))
-//                    .andReturn();
-//        } catch (Exception e) {
-//            ExceptionUtils.rethrow(e);
-//        }
-//    }
+    @Test
+    @Disabled
+    void cancelAppointmentFailShortTime() throws ReservationAppException {
+        AppointmentDto appointmentDto = new AppointmentDto();
+        appointmentDto.setId(6l);
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(JsonUtils.toJsonString(appointmentDto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Too short time to cancel Appointment!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
 
     /**
      * When appointment can be canceled successfully
      * Result: 200 OK
      */
-//        @Test
-//    void cancelAppointmentSuccess() {
-//
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        appointmentDto.setId(9l);
-//
-//        val response = createPut(URL + "/cancel", appointmentDto, AppointmentDto.class, TOKEN);
-//        assertEquals(Status.CANCELED, response.getStatus());
-//
-//    }
+    @Test
+    @Disabled
+    void cancelAppointmentSuccess() {
+
+        AppointmentDto appointmentDto = new AppointmentDto();
+        appointmentDto.setId(9l);
+
+        val response = createPut(URL + "/cancel", appointmentDto, AppointmentDto.class, TOKEN);
+        assertEquals(Status.CANCELED, response.getStatus());
+
+    }
 
     /**
      * When patient exists and appointment exists
      * Result: 200 OK
      */
     @Test
+    @Disabled
     void appointmentsByStatusAndPatientSuccess() {
         Long patientId = 3l;
         try {
@@ -308,6 +317,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 200 OK
      */
     @Test
+    @Disabled
     void appointmentsByStatus() {
         try {
             val result =
@@ -335,6 +345,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 200 OK
      */
     @Test
+    @Disabled
     void appointmentsByPatientSuccess() {
         Long patientId = 3l;
         val response = createGetAsString(URL + "/patient/" + patientId, String.class, TOKEN);
@@ -347,6 +358,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 400 "No user was found with this id and role"
      */
     @Test
+    @Disabled
     void appointmentsByPatientNotFound() {
         Long patientId = 19l;
         try {
@@ -372,6 +384,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 200 OK
      */
     @Test
+    @Disabled
     void changeDoctorSuccessDoctorAvailable() {
         AppointmentDto appointmentDto = new AppointmentDto();
         UserDto doctor = new UserDto();
@@ -386,72 +399,76 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * When doctor is not available in th selected time
      * Result: 400 "Doctor is not available in this time!"
      */
-//    @Test
-//    void changeDoctorFailDoctorNotAvailable() throws ReservationAppException {
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        UserDto doctor = new UserDto();
-//        doctor.setId(2l);
-//        appointmentDto.setId(22l);
-//        appointmentDto.setDoctor(doctor);
-//        try {
-//            mockMvc
-//                    .perform(
-//                            MockMvcRequestBuilders.put(URL + "/change")
-//                                    .header("Authorization", "Bearer " + TOKEN)
-//                                    .contentType(MediaType.APPLICATION_JSON)
-//                                    .content(JsonUtils.toJsonString(appointmentDto)))
-//                    .andDo(print())
-//                    .andExpect(status().isBadRequest())
-//                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
-//                    .andExpect(result -> assertEquals("Doctor is not available in this time!", result.getResolvedException().getMessage()))
-//                    .andReturn().getResponse().getContentAsString();
-//
-//        } catch (Exception e) {
-//            ExceptionUtils.rethrow(e);
-//
-//        }
-//    }
+    @Test
+    @Disabled
+    void changeDoctorFailDoctorNotAvailable() throws ReservationAppException {
+        AppointmentDto appointmentDto = new AppointmentDto();
+        UserDto doctor = new UserDto();
+        doctor.setId(2l);
+        appointmentDto.setId(22l);
+        appointmentDto.setDoctor(doctor);
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/change")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(JsonUtils.toJsonString(appointmentDto)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Doctor is not available in this time!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
 
-//    @Test
-//    void updateAppointmentSuccess() {
-//        AppointmentDto newAppointment = new AppointmentDto();
-//        newAppointment.setId(23l);
-//        newAppointment.setFeedback("Feedback completed");
-//        val response = createPut(URL, newAppointment, AppointmentDto.class, TOKEN);
-//        assertEquals("Feedback completed", response.getFeedback());
-//    }
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
 
-//    @Test
-//    void updateAppointmentDONEFailUserNotAllowed() {
-//        AppointmentDto newAppointment = new AppointmentDto();
-//        newAppointment.setId(23l);
-//        newAppointment.setFeedback("Updated feedback");
-//        newAppointment.setStatus(Status.DONE);
-//        try {
-//            mockMvc
-//                    .perform(
-//                            MockMvcRequestBuilders.put(URL)
-//                                    .header("Authorization", "Bearer " + TOKEN)
-//                                    .contentType(MediaType.APPLICATION_JSON)
-//                                    .content(JsonUtils.toJsonString(newAppointment))
-//                    )
-//                    .andDo(print())
-//                    .andExpect(status().isBadRequest())
-//                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
-//                    .andExpect(result -> assertEquals("Cannot update to DONE. No feedback from doctor or role not allowed!", result.getResolvedException().getMessage()))
-//                    .andReturn().getResponse().getContentAsString();
-//
-//        } catch (Exception e) {
-//            ExceptionUtils.rethrow(e);
-//
-//        }
-//    }
+        }
+    }
+
+    @Test
+    @Disabled
+    void updateAppointmentSuccess() {
+        AppointmentDto newAppointment = new AppointmentDto();
+        newAppointment.setId(23l);
+        newAppointment.setFeedback("Feedback completed");
+        val response = createPut(URL, newAppointment, AppointmentDto.class, TOKEN);
+        assertEquals("Feedback completed", response.getFeedback());
+    }
+
+    @Test
+    @Disabled
+    void updateAppointmentDONEFailUserNotAllowed() {
+        AppointmentDto newAppointment = new AppointmentDto();
+        newAppointment.setId(23l);
+        newAppointment.setFeedback("Updated feedback");
+        newAppointment.setStatus(Status.DONE);
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(JsonUtils.toJsonString(newAppointment))
+                    )
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Cannot update to DONE. No feedback from doctor or role not allowed!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
 
     /**
      * When a user is allowed to update an appointment to DONE
      * Result: 200 OK
      */
     @Test
+    @Disabled
     void updateAppointmentDONEUserAllowed() {
         AppointmentDto newAppointment = new AppointmentDto();
         newAppointment.setId(23l);
@@ -469,6 +486,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * @throws ReservationAppException
      */
     @Test
+    @Disabled
     void appointmentByStatusAndPatientNoPatientFound() throws ReservationAppException {
         Long patientId = 14l;
         try {
@@ -496,6 +514,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * @throws AppointmentNotFoundException
      */
     @Test
+    @Disabled
     void appointmentByStatusAndPatientNoAppointmentFound() throws AppointmentNotFoundException {
         Long patientId = 3l;
         try {

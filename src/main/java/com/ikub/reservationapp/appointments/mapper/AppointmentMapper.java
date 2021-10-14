@@ -5,8 +5,10 @@ import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import org.mapstruct.MapMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface AppointmentMapper {
 
     AppointmentDto appointmentToAppointmentDto(AppointmentEntity appointmentEntity);

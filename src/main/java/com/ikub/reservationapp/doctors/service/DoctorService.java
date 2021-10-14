@@ -8,6 +8,7 @@ import java.util.List;
 public interface DoctorService {
 
 //    List<DoctorReportDto> findDoctors();
-    List<UserDto> findAvailableDoctors(LocalDateTime start, LocalDateTime end);
+    boolean hasAvailableDoctors(LocalDateTime start, LocalDateTime end);
+    boolean isDoctorAvailable(UserDto doctor,  LocalDateTime start, LocalDateTime end);
     UserDto saveDoctor(UserDto userDto);
 }

@@ -33,9 +33,12 @@ public class BaseEntity implements Serializable {
         if (this.lastModifiedOn == null)
             lastModifiedOn = LocalDate.now();
         if (this.createdBy == null)
-            this.setCreatedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+            //setCreatedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+            setCreatedBy("");
         if (this.lastModifiedBy == null)
-            this.setLastModifiedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+            //setLastModifiedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+            setLastModifiedBy("");
+
     }
 
     @PreUpdate

@@ -1,14 +1,16 @@
 package com.ikub.reservationapp.patients.service;
 
+import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.patients.repository.PatientRepository;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.users.mapper.UserMapper;
-import com.ikub.reservationapp.users.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +21,7 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private PatientRepository patientRepository;
     @Autowired
-    private UserService userService;
+    private AppointmentRepository appointmentRepository;
     @Autowired
     private UserMapper userMapper;
 
@@ -35,5 +37,11 @@ public class PatientServiceImpl implements PatientService {
         }
         log.warn("No patient found!");
         throw new ReservationAppException("No value to search");
+    }
+
+    @Override
+    public boolean hasAppointment(UserDto patient, LocalDateTime start, LocalDateTime end) {
+        return appointmentRepository.findAppointmentForPatient(userMapper.userDtoToUser(patient), start, end)
+                .stream().count() > 0;
     }
 }

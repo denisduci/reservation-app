@@ -22,6 +22,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public boolean hasRole(String role) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         return authentication.getAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_" + role));
     }

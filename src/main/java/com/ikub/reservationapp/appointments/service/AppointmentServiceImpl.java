@@ -4,9 +4,12 @@ import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.appointments.mapper.AppointmentMapper;
+import com.ikub.reservationapp.appointments.utils.AppointmentValidator;
 import com.ikub.reservationapp.appointments.utils.DateUtil;
 import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.enums.Status;
+import com.ikub.reservationapp.common.exception.BadRequest;
+import com.ikub.reservationapp.common.exception.NotFound;
 import com.ikub.reservationapp.doctors.service.DoctorService;
 import com.ikub.reservationapp.patients.service.PatientService;
 import com.ikub.reservationapp.users.mapper.UserMapper;
@@ -51,6 +54,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private UserMapper userMapper;
     @Autowired
     private DateUtil dateUtil;
+    @Autowired
+    private AppointmentValidator appointmentValidator;
 
     @Override
     public AppointmentDateHourDto findAvailableHours() {//DONE
@@ -79,10 +84,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         addToReservations(startHour, endHour, reservedAppointment, reservedHours); //Add reserved hours
                     }
                 } else {
-                    long numberOfDoctorsAvailable = doctorService.findAvailableDoctors(
-                            reservedAppointment.getStartTime(),
-                            reservedAppointment.getEndTime()).stream().count();
-                    if (numberOfDoctorsAvailable == 0) {
+                    if (!doctorService.hasAvailableDoctors(reservedAppointment.getStartTime(), reservedAppointment.getEndTime())) {
                         addToReservations(startHour, endHour, reservedAppointment, reservedHours);
                     }
                 }
@@ -108,39 +110,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
-//    @Override
-//    public AppointmentDateHourDto doctorAvailableTime(Long id) {//DONE
-//        Map<LocalDate, List<LocalDateTime>> allAvailableAppointmentDatesAndHours = new HashMap<>();
-//        List<LocalDateTime> reservedHours = new ArrayList<>();
-//
-//        val existingDoctor = userService.findByIdAndRole(id, Role.DOCTOR.name());
-//        val datesToIterate = dateUtil.datesFromNowToSpecificDay(DAYS_TO_ITERATE);
-//
-//        datesToIterate.forEach(nextDate -> {
-//            List<LocalDateTime> availableHours = dateUtil.createAllAvailableHours(nextDate); //Create All available hours
-//            List<AppointmentDto> appointmentDtos = findByAppointmentDate(nextDate);
-//            appointmentDtos.forEach(appointmentDto -> { //Create ALL Reserved Hours
-//                int startHour = appointmentDto.getStartTime().getHour();
-//                int endHour = appointmentDto.getEndTime().getHour();
-//                if (appointmentDto.getDoctor().getId().equals(existingDoctor.getId())) {
-//                    for (int hour = startHour; hour < endHour; hour++) {
-//                        reservedHours.add(LocalDateTime.of(appointmentDto.getStartTime().getYear(),
-//                                appointmentDto.getStartTime().getMonth(),
-//                                appointmentDto.getStartTime().getDayOfMonth(),
-//                                hour, 0, 0, 0));
-//                    }
-//                }
-//            });
-//            //Remove Reserved Hours
-//            reservedHours.forEach(reservedHour ->
-//                    availableHours.removeIf(availableHour -> availableHour.equals(reservedHour)));
-//            allAvailableAppointmentDatesAndHours.put(nextDate, availableHours);
-//
-//        });
-//        AppointmentDateHourDto allAppointments = new AppointmentDateHourDto(allAvailableAppointmentDatesAndHours);
-//        return allAppointments;
-//    }
-
     @Transactional
     //@Scheduled(cron = "0 0 0 * * *")
     @Override
@@ -161,30 +130,17 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentDto createAppointment(AppointmentDto appointmentDto) throws ReservationAppException {//DONE
         log.info("Creating appointment: -> {}", appointmentDto);
-
-        if (appointmentDto.getStartTime().getHour() < START_TIME || appointmentDto.getStartTime().getHour() >= END_TIME) {
-            log.error("Appointment is out business hours: start -> {} and end: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
-            throw new ReservationAppException("Appointment time is out of business hours!");
-        }
-        if (appointmentDto.getAppointmentDate().isBefore(LocalDate.now())) {
-            log.error("Date selected is wrong: -> {}", appointmentDto.getAppointmentDate());
-            throw new ReservationAppException("The date selected is not valid. Please reserve a coming date!");
-        }
-
+        appointmentValidator.validateAppointment(appointmentDto);
         val doctor = userService.findByIdAndRole(appointmentDto.getDoctor().getId(), Role.DOCTOR.name());
-//        appointmentRepository
-//                .findByDoctorAvailability(userMapper.userDtoToUser(doctor), appointmentDto.getStartTime(), appointmentDto.getEndTime())
-//                .ifPresent(appointmentEntity -> {
-//                    log.error("Doctor is not available in this time: start -> {} and end: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
-//                    throw new ReservationAppException("Doctor is not available in this time!");
-//                });
-        long numberOfAppointments = appointmentRepository.findByDoctorAvailability(userMapper.userDtoToUser(doctor), appointmentDto.getStartTime(), appointmentDto.getEndTime()).stream().count();
-        if (numberOfAppointments > 0) {
-            log.error("Doctor is not available in start time: -> {} and end: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
-            throw new ReservationAppException("Doctor is not available in this time!");
+        if (!doctorService.isDoctorAvailable(doctor, appointmentDto.getStartTime(), appointmentDto.getEndTime())) {
+            log.error("Doctor is not available in start time: -> {} and end time: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
+            throw new ReservationAppException(BadRequest.DOCTOR_NOT_AVAILABLE.getMessage());
         }
-
         val patient = userService.findByIdAndRole(appointmentDto.getPatient().getId(), Role.PATIENT.name());
+        if (patientService.hasAppointment(patient, appointmentDto.getStartTime(), appointmentDto.getEndTime())) {
+            log.error("You already have an appointment in start time: -> {} and end time: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
+            throw new ReservationAppException(BadRequest.APPOINTMENT_ALREADY_EXISTS.getMessage());
+        }
         appointmentDto.setDoctor(doctor);
         appointmentDto.setPatient(patient);
         appointmentDto.setStatus(Status.PENDING);
@@ -193,22 +149,49 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto cancelAppointment(AppointmentDto appointmentDto) throws ReservationAppException{//DONE
+    public AppointmentDto cancelAppointment(AppointmentDto appointmentDto) throws ReservationAppException {//DONE
         log.info("Appointment to cancel is: -> {}", appointmentDto);
         val appointment = findById(appointmentDto.getId());
+        val patientOfAppointment = appointment.getPatient();
+        val doctorOfAppointment = appointment.getDoctor();
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (canCancel(appointment)) {
+            if (roleService.hasRole(Role.PATIENT.getRole())) {
+                if (!patientOfAppointment.getUsername().equals(userDetails.getUsername()))
+                    throw new ReservationAppException(BadRequest.UNAUTHORIZED_OWNER.getMessage());
+                appointment.setStatus(Status.CANCELED_BY_PATIENT);
+            }
+            if (roleService.hasRole(Role.DOCTOR.getRole())) {
+                if (!doctorOfAppointment.getUsername().equals(userDetails.getUsername()))
+                    throw new ReservationAppException(BadRequest.UNAUTHORIZED_OWNER.getMessage());
+                appointment.setStatus(Status.CANCELED_BY_DOCTOR);
+            }
+            if (roleService.hasRole(Role.SECRETARY.getRole()))
+                appointment.setStatus(Status.CANCELED_BY_SECRETARY);
+        }
+        log.info("Appointment canceled!");
+        return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
+    }
+
+    @Override
+    public boolean canCancel(AppointmentEntity appointment) {
         val current = LocalDateTime.now();
         val next = appointment.getStartTime();
         val duration = Duration.between(current, next);
         val seconds = duration.getSeconds();
-        val hours = seconds / 3600;
-        log.info("Hours difference is: -> {}", hours);
-        if (hours >= 24) {
-            appointment.setStatus(Status.CANCELED);
-            log.info("Appointment canceled!");
-            return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
+        val hoursDifference = seconds / 3600;
+        //return hoursDifference >= 24 ? true : false;
+        if (hoursDifference >= 24) {
+            if (appointment.getStatus() == Status.CANCELED || appointment.getStatus() == Status.CANCELED_BY_DOCTOR ||
+                    appointment.getStatus() == Status.CANCELED_BY_PATIENT || appointment.getStatus() == Status.CANCELED_BY_SECRETARY ||
+                    appointment.getStatus() == Status.DONE) {
+                log.info("Appointment can't be canceled as it is in status: -> {}", appointment.getStatus());
+                throw new ReservationAppException(BadRequest.APPOINTMENT_CANCELED_OR_DONE.getMessage());
+            }
+            return true;
         }
-        log.error("Time is too short to cancel appointment...");
-        throw new ReservationAppException("Too short time to cancel Appointment!");
+        throw new ReservationAppException(BadRequest.SHORT_TIME_TO_CANCEL.getMessage());
     }
 
     @Override
@@ -217,7 +200,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         val patient = userService.findByIdAndRole(patientId, Role.PATIENT.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(status, userMapper.userDtoToUser(patient)))) {
             log.error("No appointment found with status: -> {} and patientId: -> {}", status, patient);
-            throw new AppointmentNotFoundException("No appointment found!");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndPatient(status, userMapper.userDtoToUser(patient))
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))
@@ -232,25 +215,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(appointments)) {
             log.error("No appointment found with status: -> {}", status);
-            throw new AppointmentNotFoundException("No Appointments found!");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointments;
-    }
-
-    //@Override
-    public AppointmentDto updateAppointmentOld(AppointmentDto appointmentDto) {
-        log.info("Updating appointment: -> {}", appointmentDto);
-        val appointment = findById(appointmentDto.getId());
-        if (appointmentDto.getStatus() == Status.DONE) {
-            if (roleService.hasRole(Role.SECRETARY.getRole()) && !StringUtils.isEmpty(appointment.getFeedback())) {
-                appointment.setStatus(appointmentDto.getStatus());
-                return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
-            }
-            log.error("Failed to update to DONE. Feedback is: -> {} and user role SECRETARY is: -> {}", appointment.getFeedback(), (roleService.hasRole(Role.SECRETARY.getRole())));
-            throw new ReservationAppException("Cannot update to DONE. No feedback from doctor or role not allowed!");
-        }
-        appointment.setStatus(appointmentDto.getStatus());
-        return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
     }
 
     @Override
@@ -263,29 +230,11 @@ public class AppointmentServiceImpl implements AppointmentService {
                 //return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
             } else {
                 log.error("Failed to update to DONE. Feedback is: -> {} and user role SECRETARY is: -> {}", appointment.getFeedback(), (roleService.hasRole(Role.SECRETARY.getRole())));
-                throw new ReservationAppException("Cannot update to DONE. No feedback from doctor or role not allowed!");
+                throw new ReservationAppException(BadRequest.FEEDBACK_MISSING.getMessage());
             }
         }
-        if (newAppointment.getStatus() != null)
-            appointment.setStatus(newAppointment.getStatus());
-        if (newAppointment.getFeedback() != null)
-            appointment.setFeedback(newAppointment.getFeedback());
-        if (newAppointment.getAppointmentDate() != null)
-            appointment.setAppointmentDate(newAppointment.getAppointmentDate());
-        if (newAppointment.getStartTime() != null)
-            appointment.setStartTime(newAppointment.getStartTime());
-        if (newAppointment.getEndTime() != null)
-            appointment.setEndTime(newAppointment.getEndTime());
-        if (newAppointment.getDoctor() != null)
-            appointment.setDoctor(userMapper.userDtoToUser(newAppointment.getDoctor()));
-        if (newAppointment.getPatient() != null)
-            appointment.setPatient(userMapper.userDtoToUser(newAppointment.getPatient()));
-        if (newAppointment.getDescription() != null)
-            appointment.setDescription(newAppointment.getDescription());
-        if (newAppointment.getComments() != null)
-            appointment.setComments(newAppointment.getComments());
-        return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
-
+        AppointmentEntity updatedAppointment = appointmentValidator.validateAndSetFields(appointment, newAppointment);
+        return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(updatedAppointment));
     }
 
     @Override
@@ -301,17 +250,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         log.info("Changing doctor for appointment: -> {}", newAppointmentDto);
         val appointment = findById(newAppointmentDto.getId());
         val doctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
-        long numberOfAppointments = appointmentRepository.findByDoctorAvailability(userMapper.userDtoToUser(doctor), appointment.getStartTime(), appointment.getEndTime()).stream().count();
-        if (numberOfAppointments > 0) {
+        if (!doctorService.isDoctorAvailable(doctor, appointment.getStartTime(), appointment.getEndTime())) {
             log.error("Doctor is not available in start time: -> {} and end: -> {}", appointment.getStartTime(), appointment.getEndTime());
-            throw new ReservationAppException("Doctor is not available in this time!");
+            throw new ReservationAppException(BadRequest.DOCTOR_NOT_AVAILABLE.getMessage());
         }
-//        appointmentRepository.findByDoctorAvailability(userMapper.userDtoToUser(doctor),
-//                appointment.getStartTime(), appointment.getEndTime()).ifPresent(appointmentEntity -> {
-//            log.error("Doctor is not available in start time: -> {} and end: -> {}", appointment.getStartTime(), appointment.getEndTime());
-//            throw new ReservationAppException("Doctor is not available in this time!");
-//        });
-        appointment.setDoctor(userMapper.userDtoToUser(doctor));
         appointment.setStatus(Status.UPDATED);
         return appointmentMapper.appointmentToAppointmentDto(appointmentRepository.save(appointment));
     }
@@ -326,7 +268,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentEntity findById(Long id) throws AppointmentNotFoundException {
         return appointmentRepository.findById(id)
-                .orElseThrow(() -> new AppointmentNotFoundException("No Appointment found with ID " + id));
+                .orElseThrow(() -> new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage()));
     }
 
     @Override
@@ -357,7 +299,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         val doctorDto = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
         val doctor = userMapper.userDtoToUser(doctorDto);
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(status, doctor))) {
-            throw new AppointmentNotFoundException("No appointment found!");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndDoctor(status, doctor)
                 .stream().map(appointment -> appointmentMapper.appointmentToAppointmentDto(appointment))

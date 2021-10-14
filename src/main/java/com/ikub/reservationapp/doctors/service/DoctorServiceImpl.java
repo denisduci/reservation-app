@@ -1,5 +1,6 @@
 package com.ikub.reservationapp.doctors.service;
 
+import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import com.ikub.reservationapp.common.enums.Role;
 import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
@@ -24,6 +25,8 @@ public class DoctorServiceImpl implements DoctorService {
     @Autowired
     private DoctorRepository doctorRepository;
     @Autowired
+    private AppointmentRepository appointmentRepository;
+    @Autowired
     private UserMapper userMapper;
     @Autowired
     private UserRepository userRepository;
@@ -41,10 +44,17 @@ public class DoctorServiceImpl implements DoctorService {
 //    }
 
     @Override
-    public List<UserDto> findAvailableDoctors(LocalDateTime start, LocalDateTime end) {
+    public boolean hasAvailableDoctors(LocalDateTime start, LocalDateTime end) {
         return doctorRepository.findAvailableDoctors(start, end)
                 .stream().map(userEntity -> userMapper.userToUserDto(userEntity))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()).stream().count() > 0;
+    }
+
+    @Override
+    public boolean isDoctorAvailable(UserDto doctor, LocalDateTime start, LocalDateTime end) {
+        return appointmentRepository.findByDoctorAvailability(
+                userMapper.userDtoToUser(doctor), start, end)
+                .stream().count() == 0;
     }
 
     @Override

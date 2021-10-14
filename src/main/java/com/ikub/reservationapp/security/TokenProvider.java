@@ -132,7 +132,8 @@ public class TokenProvider implements Serializable {
      * @return AuthToken new token after validating the refresh token
      */
     public AuthToken generateRefreshToken(HttpServletRequest request) {
-        String header = request.getHeader(HEADER_STRING);
+        //String header = request.getHeader(HEADER_STRING);
+        String header = request.getHeader("refresh-token");
         String username = null;
         String refreshToken = null;
         AuthToken authToken = new AuthToken();
@@ -151,7 +152,7 @@ public class TokenProvider implements Serializable {
         } else {
             log.warn("Couldn't find bearer string, header will be ignored");
         }
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null /*&& SecurityContextHolder.getContext().getAuthentication() == null*/) {
             log.info("Username from refresh token is -> {}", username);
             UserDetails userDetails = userService.loadUserByUsername(username);
 

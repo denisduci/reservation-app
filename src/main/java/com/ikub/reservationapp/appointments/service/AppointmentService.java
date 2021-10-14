@@ -6,9 +6,8 @@ import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
-import jdk.management.resource.ResourceRequestDeniedException;
-
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentService {
@@ -24,6 +23,8 @@ public interface AppointmentService {
     List<AppointmentDto> findByStatus(Status status);
     AppointmentDto updateAppointment(AppointmentDto appointmentDto);
     String updateDefaultFeedback();
+
+    boolean canCancel(AppointmentEntity appointment);
 
     List<AppointmentDto> findByAppointmentDate(LocalDate appointmentDate);
     AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;

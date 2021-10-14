@@ -43,8 +43,8 @@ public class UserDto {
 
     @NotNull
     @NotBlank(message = "Phone number must not be empty")
-    @Size(min = 10, max = 10)
-    @Pattern(regexp = "(^$|[0-9]{10})")
+    @Size(min = 10, max = 10, message = "Size of phone number must be 10")
+    @Pattern(regexp = "(^$|[0-9]{10})", message = "Must be number with 10 digits")
     private String phone;
 
     private Set<RoleDto> roles;
