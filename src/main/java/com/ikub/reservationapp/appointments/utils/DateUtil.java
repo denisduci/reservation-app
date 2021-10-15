@@ -1,22 +1,22 @@
 package com.ikub.reservationapp.appointments.utils;
 
-import com.ikub.reservationapp.appointments.service.AppointmentService;
+import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
+import com.ikub.reservationapp.common.enums.Status;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
-@Component
-public class DateUtil {
+public final class DateUtil {
 
-    public List<LocalDate> datesFromNowToSpecificDay(int limitOfDays) {
+    public static List<LocalDate> datesFromNowToSpecificDay(int limitOfDays) {
         log.info("Inside datesFromNowToSpecificDay... ");
         List<LocalDate> dates = IntStream.iterate(0, i -> i + 1)
                 .limit(limitOfDays + 2)
@@ -29,9 +29,9 @@ public class DateUtil {
                 .collect(Collectors.toList());
     }
 
-    public List<LocalDateTime> createAllAvailableHours(LocalDate nextDate) {
+    public static List<LocalDateTime> createAllAvailableHours(LocalDate nextDate) {
         List<LocalDateTime> availableHours = new ArrayList<>();
-        for (int startTime = AppointmentService.START_TIME; startTime < AppointmentService.END_TIME; startTime++) {
+        for (int startTime = AppointmentConstants.START_TIME; startTime < AppointmentConstants.END_TIME; startTime++) {
             if (nextDate.getMonth() == LocalDate.now().getMonth() && nextDate.getDayOfMonth() == LocalDateTime.now().getDayOfMonth()
                     && nextDate.getYear() == LocalDate.now().getYear()) {
                 if (startTime > LocalDateTime.now().getHour()) {
@@ -50,4 +50,10 @@ public class DateUtil {
         log.info("All available hours for date: -> {} are: -> {}", nextDate, availableHours);
         return availableHours;
     }
+
+//    public static List<Status> getCanceledStatuses() {
+//        return Arrays.stream(Status.values()).filter(status ->
+//                status == Status.CANCELED_BY_DOCTOR || status == Status.CANCELED_BY_PATIENT || status == Status.CANCELED_BY_SECRETARY)
+//                .collect(Collectors.toList());
+//    }
 }

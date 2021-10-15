@@ -31,7 +31,7 @@ public class PatientServiceImpl implements PatientService {
             return patientRepository.findByFirstNameOrLastNameContainingAllIgnoreCase(firstName, lastName)
                     .stream().map(patient -> {
                         log.info("Found patient {}", patient);
-                        return userMapper.userToUserDto(patient);
+                        return userMapper.toDto(patient);
                     })
                     .collect(Collectors.toList());
         }
@@ -41,7 +41,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public boolean hasAppointment(UserDto patient, LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findAppointmentForPatient(userMapper.userDtoToUser(patient), start, end)
+        return appointmentRepository.findAppointmentForPatient(userMapper.toEntity(patient), start, end)
                 .stream().count() > 0;
     }
 }

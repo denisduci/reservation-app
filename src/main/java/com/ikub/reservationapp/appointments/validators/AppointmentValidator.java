@@ -1,13 +1,10 @@
-package com.ikub.reservationapp.appointments.utils;
+package com.ikub.reservationapp.appointments.validators;
 
+import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
-import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
-import com.ikub.reservationapp.appointments.service.AppointmentService;
 import com.ikub.reservationapp.common.exception.BadRequest;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
-import com.ikub.reservationapp.users.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
@@ -16,12 +13,9 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Component
-public class AppointmentValidator {
+public final class AppointmentValidator {
 
-    @Autowired
-    private UserMapper userMapper;
-
-    public void validateAppointment(AppointmentDto appointmentDto) throws ReservationAppException {
+    public static void validateAppointment(AppointmentDto appointmentDto) throws ReservationAppException {
 
         if (appointmentDto == null) {
             log.error("Appointment missing: -> {}", appointmentDto);
@@ -43,7 +37,7 @@ public class AppointmentValidator {
             log.error("Appointment patient missing: -> {}", appointmentDto.getPatient().getId());
             throw new ReservationAppException(BadRequest.PATIENT_MISSING.getMessage());
         }
-        if (appointmentDto.getStartTime().getHour() < AppointmentService.START_TIME || appointmentDto.getStartTime().getHour() >= AppointmentService.END_TIME ||
+        if (appointmentDto.getStartTime().getHour() < AppointmentConstants.START_TIME || appointmentDto.getStartTime().getHour() >= AppointmentConstants.END_TIME ||
                 appointmentDto.getAppointmentDate().getDayOfWeek() == DayOfWeek.SATURDAY || appointmentDto.getAppointmentDate().getDayOfWeek() == DayOfWeek.SUNDAY) {
             log.error("Appointment is out business hours: start -> {} and end: -> {}", appointmentDto.getStartTime(), appointmentDto.getEndTime());
             throw new ReservationAppException(BadRequest.APPOINTMENT_OUT_OF_HOURS.getMessage());
@@ -58,27 +52,27 @@ public class AppointmentValidator {
         }
     }
 
-    public AppointmentEntity validateAndSetFields(AppointmentEntity currentAppointment, AppointmentDto newAppointment) {
-
-        if (newAppointment.getStatus() != null)
-            currentAppointment.setStatus(newAppointment.getStatus());
-        if (newAppointment.getFeedback() != null)
-            currentAppointment.setFeedback(newAppointment.getFeedback());
-        if (newAppointment.getAppointmentDate() != null)
-            currentAppointment.setAppointmentDate(newAppointment.getAppointmentDate());
-        if (newAppointment.getStartTime() != null)
-            currentAppointment.setStartTime(newAppointment.getStartTime());
-        if (newAppointment.getEndTime() != null)
-            currentAppointment.setEndTime(newAppointment.getEndTime());
-        if (newAppointment.getDoctor() != null)
-            currentAppointment.setDoctor(userMapper.userDtoToUser(newAppointment.getDoctor()));
-        if (newAppointment.getPatient() != null)
-            currentAppointment.setPatient(userMapper.userDtoToUser(newAppointment.getPatient()));
-        if (newAppointment.getDescription() != null)
-            currentAppointment.setDescription(newAppointment.getDescription());
-        if (newAppointment.getComments() != null)
-            currentAppointment.setComments(newAppointment.getComments());
-
-        return currentAppointment;
-    }
+//    public AppointmentEntity validateAndSetFields(AppointmentEntity currentAppointment, AppointmentDto newAppointment) {
+//
+//        if (newAppointment.getStatus() != null)
+//            currentAppointment.setStatus(newAppointment.getStatus());
+//        if (newAppointment.getFeedback() != null)
+//            currentAppointment.setFeedback(newAppointment.getFeedback());
+//        if (newAppointment.getAppointmentDate() != null)
+//            currentAppointment.setAppointmentDate(newAppointment.getAppointmentDate());
+//        if (newAppointment.getStartTime() != null)
+//            currentAppointment.setStartTime(newAppointment.getStartTime());
+//        if (newAppointment.getEndTime() != null)
+//            currentAppointment.setEndTime(newAppointment.getEndTime());
+//        if (newAppointment.getDoctor() != null)
+//            currentAppointment.setDoctor(userMapper.toEntity(newAppointment.getDoctor()));
+//        if (newAppointment.getPatient() != null)
+//            currentAppointment.setPatient(userMapper.toEntity(newAppointment.getPatient()));
+//        if (newAppointment.getDescription() != null)
+//            currentAppointment.setDescription(newAppointment.getDescription());
+//        if (newAppointment.getComments() != null)
+//            currentAppointment.setComments(newAppointment.getComments());
+//
+//        return currentAppointment;
+//    }
 }

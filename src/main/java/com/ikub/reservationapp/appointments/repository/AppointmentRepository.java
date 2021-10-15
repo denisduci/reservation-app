@@ -18,22 +18,28 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
 
     List<AppointmentEntity> findByStatus(Status status);
 
+    List<AppointmentEntity> findByStatusIn(List<Status> statuses);
+
     //@Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime")
-    @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime and a.status<>2")
+    @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime AND a.status NOT IN (3,4,5)")
     List<AppointmentEntity> findByAppointmentDate(@Param("appointmentDateTime") LocalDate appointmentDate);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.doctor=:doctorId AND a.status NOT IN (2,5,6,7)")
+    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.doctor=:doctorId AND a.status NOT IN (3,4,5)")
     // working version @Query("SELECT a FROM AppointmentEntity a WHERE ((:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) OR (:appointmentStartTime BETWEEN a.startTime AND a.endTime)) AND a.doctor=:doctorId")
     List<AppointmentEntity> findByDoctorAvailability(@Param("doctorId") UserEntity doctorId,
                                                      @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                      @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.patient=:patientId AND a.status NOT IN (2,5,6,7)")
+    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.patient=:patientId AND a.status NOT IN (3,4,5)")
     List<AppointmentEntity> findAppointmentForPatient(@Param("patientId") UserEntity patientId,
                                                       @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                       @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
 
-    List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patient);
+    @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (2,5,6,7)")
+    List<AppointmentEntity> findByStatusCanceledAndPatient(@Param(("patientId")) UserEntity patientId);
+
+    List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patientId);
+
     List<AppointmentEntity> findByPatient(UserEntity patient);
     List<AppointmentEntity> findByDoctor(UserEntity doctor);
     List<AppointmentEntity> findAll();

@@ -271,17 +271,17 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * When appointment can be canceled successfully
      * Result: 200 OK
      */
-    @Test
-    @Disabled
-    void cancelAppointmentSuccess() {
-
-        AppointmentDto appointmentDto = new AppointmentDto();
-        appointmentDto.setId(9l);
-
-        val response = createPut(URL + "/cancel", appointmentDto, AppointmentDto.class, TOKEN);
-        assertEquals(Status.CANCELED, response.getStatus());
-
-    }
+//    @Test
+//    @Disabled
+//    void cancelAppointmentSuccess() {
+//
+//        AppointmentDto appointmentDto = new AppointmentDto();
+//        appointmentDto.setId(9l);
+//
+//        val response = createPut(URL + "/cancel", appointmentDto, AppointmentDto.class, TOKEN);
+//        assertEquals(Status.CANCELED, response.getStatus());
+//
+//    }
 
     /**
      * When patient exists and appointment exists

@@ -2,25 +2,39 @@ package com.ikub.reservationapp.appointments.service;
 
 import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
+import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
+
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentService {
 
-    int START_TIME = 8;
-    int END_TIME = 17;
-    int DAYS_TO_ITERATE = 7;
+    List<AppointmentDto> getCanceledAppointmentsByPatient(Long patient) throws AppointmentNotFoundException;//DONE;
+
+    List<AppointmentDto> getActiveAppointmentsByPatient(Long patientId) throws AppointmentNotFoundException;//DONE
+
+    List<AppointmentDto> getFinishedAppointmentsByPatient(Long patientId) throws AppointmentNotFoundException;//DONE
+
+    List<AppointmentDto> getAllPendingAppointments();//DONE
+
+    List<AppointmentDto> getAllFinishedAppointments();//DONE
+
+    List<AppointmentDto> getAllCanceledAppointments();
+
+    AppointmentResponseDto approveAppointment(Long id);
+
+    AppointmentResponseDto approveOrRejectDoctorChange(AppointmentDto appointmentDto);
+
+    AppointmentResponseDto setAppointmentToDone(Long id);
 
     AppointmentDateHourDto findAvailableHours(); //DONE
     AppointmentDto createAppointment(AppointmentDto appointmentDto) throws ReservationAppException; //DONE
-    AppointmentDto cancelAppointment(AppointmentDto appointmentDto) throws ReservationAppException;
-    List<AppointmentDto> findByStatusAndPatient(Status status, Long patientId) throws AppointmentNotFoundException;
-    List<AppointmentDto> findByStatus(Status status);
+    AppointmentDto cancelAppointment(AppointmentDto appointmentDto) throws ReservationAppException;//DONE
+
     AppointmentDto updateAppointment(AppointmentDto appointmentDto);
     String updateDefaultFeedback();
 

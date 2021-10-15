@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     private PasswordValidationUtil passwordValidation;
 
     public UserDetails loadUserByUsername(String username) {
-        UserEntity user = userMapper.userDtoToUser(findByUsername(username));
+        UserEntity user = userMapper.toEntity(findByUsername(username));
         log.info("Inside loadUserByUsername, found user {}", user);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(), user.getPassword(), getAuthorities(user));
@@ -89,7 +89,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public UserDto save(UserDto userDto) throws PasswordNotValidException, ReservationAppException {
-        val userEntity = userMapper.userDtoToUser(userDto);
+        val userEntity = userMapper.toEntity(userDto);
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION
         userRepository.findByUsername(userDto.getUsername()).ifPresent(user -> {
             throw new ReservationAppException(BadRequest.USER_EXISTS.getMessage());
@@ -109,25 +109,25 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         Set<RoleEntity> roles = new HashSet<>();
         roles.add(role);
         userEntity.setRoles(roles);
-        return userMapper.userToUserDto(userRepository.save(userEntity));
+        return userMapper.toDto(userRepository.save(userEntity));
     }
 
     @Override
     public List<UserDto> findAll() {
         return userRepository.findAll()
-                .stream().map(user -> userMapper.userToUserDto(user))
+                .stream().map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public UserDto findById(Long id) throws UserNotFoundException {
-        return userMapper.userToUserDto(userRepository.findById(id)
+        return userMapper.toDto(userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(NotFound.USER.getMessage())));
     }
 
     @Override
     public UserUpdateDto updateUser(UserUpdateDto userDto) {
-        val user = userMapper.userDtoToUser(findById(userDto.getId()));
+        val user = userMapper.toEntity(findById(userDto.getId()));
         Set<RoleEntity> currentRoles = user.getRoles();
         Set<RoleEntity> newRoles = userDto.getRoles().stream().map(roleDto -> {
             return roleService.findByName(roleDto.getName());
@@ -141,19 +141,25 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Override
     public List<UserDto> findUsersByRole(String roleName) {
         return userRepository.findByRolesName(Role.DOCTOR.name()).stream().map
-                (userEntity -> userMapper.userToUserDto(userEntity))
-                .collect(Collectors.toList());
+                (userMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
     public UserDto findByIdAndRole(Long id, String roleName) throws ReservationAppException {
-        return userMapper.userToUserDto(userRepository.findByIdAndRolesName(id, roleName)
+        return userMapper.toDto(userRepository.findByIdAndRolesName(id, roleName)
                 .orElseThrow(() -> new ReservationAppException(NotFound.USER_WITH_ROLE.getMessage())));
     }
 
     @Override
     public UserDto findByUsername(String username) throws UserNotFoundException {
-        return userMapper.userToUserDto(userRepository.findByUsername(username)
+        return userMapper.toDto(userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException(NotFound.USERNAME.getMessage())));
+    }
+
+    @Override
+    public String getUsernameFromContext() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        return userDetails.getUsername();
     }
 }

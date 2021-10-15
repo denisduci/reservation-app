@@ -46,20 +46,20 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public boolean hasAvailableDoctors(LocalDateTime start, LocalDateTime end) {
         return doctorRepository.findAvailableDoctors(start, end)
-                .stream().map(userEntity -> userMapper.userToUserDto(userEntity))
+                .stream().map(userEntity -> userMapper.toDto(userEntity))
                 .collect(Collectors.toList()).stream().count() > 0;
     }
 
     @Override
     public boolean isDoctorAvailable(UserDto doctor, LocalDateTime start, LocalDateTime end) {
         return appointmentRepository.findByDoctorAvailability(
-                userMapper.userDtoToUser(doctor), start, end)
+                userMapper.toEntity(doctor), start, end)
                 .stream().count() == 0;
     }
 
     @Override
     public UserDto saveDoctor(UserDto userDto) {
-        val userEntity = userMapper.userDtoToUser(userDto);
+        val userEntity = userMapper.toEntity(userDto);
         //1 - CHECK IF USER EXISTS | THROW EXCEPTION
         Optional.ofNullable(userRepository.findByUsername(userDto.getUsername()))
                 .ifPresent(user -> {
@@ -78,7 +78,7 @@ public class DoctorServiceImpl implements DoctorService {
         Set<RoleEntity> roles = new HashSet<>();
         roles.add(role);
         userEntity.setRoles(roles);
-        return userMapper.userToUserDto(userRepository.save(userEntity));
+        return userMapper.toDto(userRepository.save(userEntity));
     }
 
 }

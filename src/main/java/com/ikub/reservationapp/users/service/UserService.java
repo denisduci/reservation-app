@@ -22,4 +22,6 @@ public interface UserService {
     List<UserDto> findUsersByRole(String roleName);
     UserDto findByIdAndRole(Long id, String roleName) throws ReservationAppException;
     UserDto findByUsername(String username) throws UserNotFoundException;
+
+    String getUsernameFromContext();
 }
