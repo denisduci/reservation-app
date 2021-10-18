@@ -20,7 +20,7 @@ public enum BadRequest {
     APPOINTMENT_DATE_NOT_VALID("The date selected is not valid. Please reserve a coming date!"),
     SHORT_TIME_TO_CANCEL("Too short time to cancel Appointment!"),
     USER_EXISTS("User with username already exists"),
-    START_TIME_NOT_VALID("Start time must be a valid time!"),
+    START_TIME_NOT_VALID("Start time must not be before the current time!"),
     PASSWORD_SECURITY_FAIL("Password doesn't meet security!"),
     PASSWORD_MATCH_FAIL("Passwords do not match!"),
     INVALID_STATUS("Appointment is not in valid status for this operation"),

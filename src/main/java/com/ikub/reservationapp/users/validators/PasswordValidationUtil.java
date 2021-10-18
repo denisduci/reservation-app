@@ -1,4 +1,4 @@
-package com.ikub.reservationapp.users.utils;
+package com.ikub.reservationapp.users.validators;
 
 import org.passay.*;
 import org.springframework.beans.factory.annotation.Autowired;

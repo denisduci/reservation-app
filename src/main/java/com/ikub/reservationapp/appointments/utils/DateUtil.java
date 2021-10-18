@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,8 +31,8 @@ public final class DateUtil {
     public static List<LocalDateTime> createAllAvailableHours(LocalDate nextDate) {
         List<LocalDateTime> availableHours = new ArrayList<>();
         for (int startTime = AppointmentConstants.START_TIME; startTime < AppointmentConstants.END_TIME; startTime++) {
-            if (nextDate.getMonth() == LocalDate.now().getMonth() && nextDate.getDayOfMonth() == LocalDateTime.now().getDayOfMonth()
-                    && nextDate.getYear() == LocalDate.now().getYear()) {
+            if (nextDate.getYear() == LocalDate.now().getYear() && nextDate.getMonth() == LocalDate.now().getMonth()
+                    && nextDate.getDayOfMonth() == LocalDateTime.now().getDayOfMonth()) {
                 if (startTime > LocalDateTime.now().getHour()) {
                     LocalDateTime availableTime = LocalDateTime.of(LocalDateTime.now().getYear(),
                             nextDate.getMonth(), nextDate.getDayOfMonth(),
@@ -50,10 +49,4 @@ public final class DateUtil {
         log.info("All available hours for date: -> {} are: -> {}", nextDate, availableHours);
         return availableHours;
     }
-
-//    public static List<Status> getCanceledStatuses() {
-//        return Arrays.stream(Status.values()).filter(status ->
-//                status == Status.CANCELED_BY_DOCTOR || status == Status.CANCELED_BY_PATIENT || status == Status.CANCELED_BY_SECRETARY)
-//                .collect(Collectors.toList());
-//    }
 }

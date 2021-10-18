@@ -18,7 +18,7 @@ import com.ikub.reservationapp.users.exception.UserNotFoundException;
 import com.ikub.reservationapp.users.mapper.RoleMapper;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
-import com.ikub.reservationapp.users.utils.PasswordValidationUtil;
+import com.ikub.reservationapp.users.validators.PasswordValidationUtil;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;

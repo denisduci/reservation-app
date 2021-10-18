@@ -35,15 +35,18 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
                                                       @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                       @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (2,5,6,7)")
+    @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (3,4,5)")
     List<AppointmentEntity> findByStatusCanceledAndPatient(@Param(("patientId")) UserEntity patientId);
 
+    @Query("SELECT a FROM AppointmentEntity a WHERE a.doctor=:doctorId AND a.status IN (3,4,5)")
+    List<AppointmentEntity> findByStatusCanceledAndDoctor(@Param(("doctorId")) UserEntity doctorId);
+
     List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patientId);
+    List<AppointmentEntity> findByStatusAndDoctor(Status status, UserEntity doctor);
 
     List<AppointmentEntity> findByPatient(UserEntity patient);
     List<AppointmentEntity> findByDoctor(UserEntity doctor);
     List<AppointmentEntity> findAll();
-    List<AppointmentEntity> findByStatusAndDoctor(Status status, UserEntity doctor);
 
     @Query(value="SELECT new com.ikub.reservationapp.appointments.dto.reports.ReportDBResponseDto(date_trunc('week', a.appointmentDate), count(*), a.status) FROM " +
             "AppointmentEntity a GROUP BY date_trunc('week', a.appointmentDate), a.status ORDER BY date_trunc('week',a.appointmentDate) DESC")

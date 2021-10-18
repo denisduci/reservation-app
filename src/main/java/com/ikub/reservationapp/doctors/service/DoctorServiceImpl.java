@@ -10,7 +10,7 @@ import com.ikub.reservationapp.users.entity.RoleEntity;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
 import com.ikub.reservationapp.users.service.RoleService;
-import com.ikub.reservationapp.users.utils.PasswordValidationUtil;
+import com.ikub.reservationapp.users.validators.PasswordValidationUtil;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
