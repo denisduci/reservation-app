@@ -2,6 +2,7 @@ package com.ikub.reservationapp.appointments.service;
 
 import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
 import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
+import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
@@ -23,6 +24,7 @@ import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundExcepti
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import lombok.val;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,16 +55,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     private UserMapper userMapper;
 
     @Override
-    public AppointmentDateHourDto getAllAvailableHours() {//DONE
+    public  List<AppointmentDateTimeDto> getAllAvailableHours() {//DONE
         String loggedInUsername = userService.getUsernameFromContext();
         log.info("Authenticated username is: -> {}", loggedInUsername);
-        Map<LocalDate, List<LocalDateTime>> allAvailableAppointmentDatesAndHours = new HashMap<>();
+        List<AppointmentDateTimeDto> allAvailableAppointmentDatesAndHoursResponse = new ArrayList<>();
         val datesToIterate = DateUtil.datesFromNowToSpecificDay(AppointmentConstants.DAYS_TO_ITERATE);
         log.info("Dates to iterate: -> {}", datesToIterate);
 
         datesToIterate.forEach(nextDate -> {
             List<LocalDateTime> reservedHours = new ArrayList<>();
-            List<LocalDateTime> availableHours = DateUtil.createAllAvailableHours(nextDate);//1-Create All available hours
+            List<LocalDateTime> availableHours = DateUtil.createAllAvailableHours(nextDate);//1-Create All available hours for nextDate
             List<AppointmentDto> reservedAppointments = getAppointmentByDate(nextDate);
             log.info("Reserved appointments in date: -> {} are: -> {}", nextDate, reservedAppointments);
 
@@ -81,10 +83,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.info("Reserved hours: -> {}", reservedHours);
             removeReservedHoursFromAllAvailableHours(reservedHours, availableHours);
             log.info("Available hours for date -> {} are: -> {}", nextDate, availableHours);
-            allAvailableAppointmentDatesAndHours.put(nextDate, availableHours);
+            AppointmentDateTimeDto availableAppointmentDto = new AppointmentDateTimeDto(nextDate, availableHours);
+            allAvailableAppointmentDatesAndHoursResponse.add(availableAppointmentDto);
         });
-        AppointmentDateHourDto allFreeAppointmentHours = new AppointmentDateHourDto(allAvailableAppointmentDatesAndHours);
-        return allFreeAppointmentHours;
+        return allAvailableAppointmentDatesAndHoursResponse;
     }
 
     public void removeReservedHoursFromAllAvailableHours(List<LocalDateTime> reservedHours, List<LocalDateTime> availableHours) {

@@ -33,7 +33,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY','ROLE_DOCTOR')")
     @GetMapping("/available")
-    public ResponseEntity<AppointmentDateHourDto> getAllAvailableHours() {
+    public ResponseEntity<List<AppointmentDateTimeDto>> getAllAvailableHours() {
         log.info("Retrieving all available hours...");
         return new ResponseEntity<>(appointmentService.getAllAvailableHours(), HttpStatus.OK);
     }

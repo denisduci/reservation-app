@@ -1,6 +1,7 @@
 package com.ikub.reservationapp.appointments.service;
 
 import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
+import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
@@ -12,7 +13,7 @@ import java.util.List;
 
 public interface AppointmentService {
 
-    AppointmentDateHourDto getAllAvailableHours(); //DONE
+    List<AppointmentDateTimeDto> getAllAvailableHours(); //DONE
 
     AppointmentResponseDto createAppointment(AppointmentDto appointmentDto) throws ReservationAppException; //DONE
 

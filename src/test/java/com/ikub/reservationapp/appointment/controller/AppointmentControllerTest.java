@@ -2,6 +2,7 @@ package com.ikub.reservationapp.appointment.controller;
 
 import com.ikub.reservationapp.ReservationAppTestSupport;
 import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
+import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
@@ -79,7 +80,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      */
     @Test
     void getAllAvailableHours() {
-         createGet(URL + "/available", AppointmentDateHourDto.class, TOKEN);
+        createGetAsString(URL + "/available", AppointmentDateTimeDto.class, TOKEN);
     }
 
     /**
