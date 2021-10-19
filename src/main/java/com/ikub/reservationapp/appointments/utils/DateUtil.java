@@ -2,6 +2,7 @@ package com.ikub.reservationapp.appointments.utils;
 
 import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
 import com.ikub.reservationapp.common.enums.Status;
+import com.ikub.reservationapp.common.exception.ReservationAppException;
 import lombok.extern.slf4j.Slf4j;
 import java.time.DayOfWeek;
 import java.time.LocalDate;

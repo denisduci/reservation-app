@@ -59,7 +59,7 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
     @Query(value = "SELECT week AS date, name AS firstname, surname AS lastname, max(COUNTERV) AS numberOfAppointments, status AS status  FROM(\n" +
             "\t\tselect date_trunc('MONTH',appointment_date) AS week,\n" +
             "\t\td.first_name AS name, d.last_name AS surname, count(a.doctor_id) AS COUNTERV, a.status AS status FROM users d JOIN\n" +
-            "\t\tappointment a ON a.doctor_id=d.id WHERE a.status=4\n" +
+            "\t\tappointment a ON a.doctor_id=d.id WHERE a.status=2\n" +
             "GROUP BY week,\n" +
             "d.first_name, d.last_name,status  \n" +
             ") AS result GROUP BY \n" +

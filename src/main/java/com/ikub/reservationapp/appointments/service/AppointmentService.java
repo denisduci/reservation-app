@@ -16,25 +16,25 @@ public interface AppointmentService {
 
     AppointmentResponseDto createAppointment(AppointmentDto appointmentDto) throws ReservationAppException; //DONE
 
-    AppointmentDto cancelAppointment(Long appointmentId) throws ReservationAppException;//DONE
+    AppointmentResponseDto cancelAppointment(Long appointmentId) throws ReservationAppException;//DONE
 
-    List<AppointmentDto> getPatientCanceledAppointments(Long patient) throws AppointmentNotFoundException;//DONE;
+    List<AppointmentResponseDto> getPatientCanceledAppointments(Long patient) throws AppointmentNotFoundException;//DONE;
 
-    List<AppointmentDto> getDoctorCanceledAppointments(Long doctorId) throws AppointmentNotFoundException;//DONE;
+    List<AppointmentResponseDto> getDoctorCanceledAppointments(Long doctorId) throws AppointmentNotFoundException;//DONE;
 
-    List<AppointmentDto> getPatientActiveAppointments(Long patientId) throws AppointmentNotFoundException;//DONE
+    List<AppointmentResponseDto> getPatientActiveAppointments(Long patientId) throws AppointmentNotFoundException;//DONE
 
-    List<AppointmentDto> getDoctorActiveAppointments(Long doctorId) throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getDoctorActiveAppointments(Long doctorId) throws AppointmentNotFoundException;
 
-    List<AppointmentDto> getPatientFinishedAppointments(Long patientId) throws AppointmentNotFoundException;//DONE
+    List<AppointmentResponseDto> getPatientFinishedAppointments(Long patientId) throws AppointmentNotFoundException;//DONE
 
-    List<AppointmentDto> getDoctorFinishedAppointments(Long doctorId) throws AppointmentNotFoundException;//DONE
+    List<AppointmentResponseDto> getDoctorFinishedAppointments(Long doctorId) throws AppointmentNotFoundException;//DONE
 
-    List<AppointmentDto> getAllPendingAppointments() throws AppointmentNotFoundException;//DONE
+    List<AppointmentResponseDto> getAllPendingAppointments() throws AppointmentNotFoundException;//DONE
 
-    List<AppointmentDto> getAllFinishedAppointments() throws AppointmentNotFoundException;//DONE
+    List<AppointmentResponseDto> getAllFinishedAppointments() throws AppointmentNotFoundException;//DONE
 
-    List<AppointmentDto> getAllCanceledAppointments() throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getAllCanceledAppointments() throws AppointmentNotFoundException;
 
     AppointmentResponseDto approveAppointment(Long appointmentId);
 
@@ -42,17 +42,17 @@ public interface AppointmentService {
 
     AppointmentResponseDto setAppointmentToDone(Long appointmentId);
 
-    AppointmentDto updateAppointment(AppointmentDto appointmentDto);
+    AppointmentResponseDto updateAppointment(AppointmentDto appointmentDto);
 
     String updateDefaultFeedback();
 
     boolean isEligibleAppointmentToCancel(AppointmentEntity appointment);
 
     List<AppointmentDto> getAppointmentByDate(LocalDate appointmentDate);
-    AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;
+    AppointmentResponseDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;
     AppointmentResponseDto updateAppointmentFeedback(AppointmentDto appointmentDto);
     AppointmentEntity getAppointmentById(Long id) throws AppointmentNotFoundException;
-    List<AppointmentDto> getPatientAllAppointments(Long patientId);
-    List<AppointmentDto> getDoctorAllAppointments(Long doctorId);
-    List<AppointmentDto> getAllAppointments();
+    List<AppointmentResponseDto> getPatientAllAppointments(Long patientId);
+    List<AppointmentResponseDto> getDoctorAllAppointments(Long doctorId);
+    List<AppointmentResponseDto> getAllAppointments();
 }

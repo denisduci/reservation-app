@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppointmentDateTimeDto {
-    private LocalDate appoointmentDate;
+    private LocalDate appointmentDate;
     private List<LocalDateTime> availableHours;
 }

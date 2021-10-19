@@ -19,16 +19,20 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import springfox.documentation.spring.web.json.Json;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import  static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -61,7 +65,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
                     .perform(
                             MockMvcRequestBuilders.post("/users/authenticate")
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(JsonUtils.toJsonString(loginDoctor)))
+                                    .content(JsonUtils.toJsonString(loginPatient)))
                     .andExpect(status().isOk())
                     .andReturn();
             TOKEN = JsonUtils.toObject(result.getResponse().getContentAsString(), AuthToken.class).getAccessToken();
@@ -78,7 +82,33 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      */
     @Test
     void getAllAvailableHours() {
-        createGetAsString(URL + "/available", AppointmentDateTimeDto.class, TOKEN);
+        try {
+
+            AppointmentDto reservedAppointment = new AppointmentDto();
+            reservedAppointment.setAppointmentDate(LocalDate.of(2021, 10, 20));
+            reservedAppointment.setStartTime(LocalDateTime.of(2021, 10, 20, 14, 0, 0));
+            reservedAppointment.setEndTime(LocalDateTime.of(2021, 10, 20, 15, 0, 0));
+
+            val result = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/available")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            List<AppointmentDateTimeDto> listOfObjects = JsonUtils.toList(result, AppointmentDateTimeDto.class);
+
+            List<LocalDateTime> timesAvailable =
+                    listOfObjects.stream().filter(appointmentDateTimeDto -> appointmentDateTimeDto.getAppointmentDate().equals(reservedAppointment.getAppointmentDate())).findFirst()
+                            .get().getAvailableHours().stream().filter(availableTime -> availableTime.getHour() != reservedAppointment.getStartTime().getHour())
+                            .collect(Collectors.toList());
+
+            assertThat(listOfObjects, hasSize(7));
+            assertThat(timesAvailable, hasSize(8));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
     }
 
     /**
@@ -86,15 +116,16 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: 200 OK
      */
     @Test
-    void createAppointment() {
+    @Disabled
+    void createAppointmentSuccess() {
         AppointmentDto appointmentDto = new AppointmentDto();
         UserDto doctor = new UserDto();
-        doctor.setId(2l);
+        doctor.setId(5l);
         UserDto patient = new UserDto();
         patient.setId(3l);
-        LocalDate appointmentDate = LocalDate.of(2021, 10, 18);
-        LocalDateTime startTime = LocalDateTime.of(2021, 10, 18, 16, 00, 0);
-        LocalDateTime endTime = LocalDateTime.of(2021, 10, 18, 17, 00, 0);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 21);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 21, 14, 00, 0);
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 21, 15, 00, 0);
         appointmentDto.setAppointmentDate(appointmentDate);
         appointmentDto.setStartTime(startTime);
         appointmentDto.setEndTime(endTime);
@@ -102,7 +133,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         appointmentDto.setDescription("Dentist appointment");
         appointmentDto.setDoctor(doctor);
         appointmentDto.setPatient(patient);
-        val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
+        val response = createPost(URL, appointmentDto, AppointmentResponseDto.class, TOKEN);
         assertEquals(Status.PENDING, response.getStatus());
     }
 
@@ -118,9 +149,9 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         doctor.setId(5l);
         UserDto patient = new UserDto();
         patient.setId(3l);
-        LocalDate appointmentDate = LocalDate.of(2021, 10, 18);
-        LocalDateTime startTime = LocalDateTime.of(2021, 10, 18, 16, 00, 0);
-        LocalDateTime endTime = LocalDateTime.of(2021, 10, 18, 17, 00, 0);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 20);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 20, 14, 00, 0);
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 20, 15, 00, 0);
         appointmentDto.setAppointmentDate(appointmentDate);
         appointmentDto.setStartTime(startTime);
         appointmentDto.setEndTime(endTime);
@@ -128,7 +159,6 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         appointmentDto.setDescription("Dentist appointment");
         appointmentDto.setDoctor(doctor);
         appointmentDto.setPatient(patient);
-        //val response = createPost(URL, appointmentDto, AppointmentDto.class, TOKEN);
 
         try {
             mockMvc
@@ -148,7 +178,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
 
     /**
      * When doctor is not available in this time
-     * Result: 400 "You already have an appointment in this time!"
+     * Result: 400 "Doctor is not available in this time!"
      * @throws ReservationAppException
      */
     @Test
@@ -158,9 +188,9 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         doctor.setId(5l);
         UserDto patient = new UserDto();
         patient.setId(7l);
-        LocalDate appointmentDate = LocalDate.of(2021, 10, 18);
-        LocalDateTime startTime = LocalDateTime.of(2021, 10, 18, 16, 00, 0);
-        LocalDateTime endTime = LocalDateTime.of(2021, 10, 18, 17, 00, 0);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 20);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 20, 14, 00, 0);
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 20, 15, 00, 0);
         appointmentDto.setAppointmentDate(appointmentDate);
         appointmentDto.setStartTime(startTime);
         appointmentDto.setEndTime(endTime);
@@ -186,7 +216,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     }
 
     /**
-     * When appoitnment is out of normal business hours
+     * When appoitnment is after end time 17
      * Result: 400 "Appointment time is out of business hours!"
      * @throws ReservationAppException
      */
@@ -197,9 +227,9 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         doctor.setId(5l);
         UserDto patient = new UserDto();
         patient.setId(3l);
-        LocalDate appointmentDate = LocalDate.of(2021, 10, 18);
-        LocalDateTime startTime = LocalDateTime.of(2021, 10, 18, 17, 00, 0);//hour 17
-        LocalDateTime endTime = LocalDateTime.of(2021, 10, 18, 18, 00, 0);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 20);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 20, 17, 00, 0);//hour 17
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 20, 18, 00, 0);
         appointmentDto.setAppointmentDate(appointmentDate);
         appointmentDto.setStartTime(startTime);
         appointmentDto.setEndTime(endTime);
@@ -225,7 +255,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     }
 
     /**
-     * When appoitnment is out of normal business hours
+     * When appointnment is before start time 8
      * Result: 400 "Appointment time is out of business hours!"
      * @throws ReservationAppException
      */
@@ -236,9 +266,9 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         doctor.setId(5l);
         UserDto patient = new UserDto();
         patient.setId(3l);
-        LocalDate appointmentDate = LocalDate.of(2021, 10, 18);
-        LocalDateTime startTime = LocalDateTime.of(2021, 10, 18, 7, 00, 0);//hour 7
-        LocalDateTime endTime = LocalDateTime.of(2021, 10, 18, 18, 00, 0);
+        LocalDate appointmentDate = LocalDate.of(2021, 10, 20);
+        LocalDateTime startTime = LocalDateTime.of(2021, 10, 20, 7, 00, 0);//hour 7
+        LocalDateTime endTime = LocalDateTime.of(2021, 10, 20, 18, 00, 0);
         appointmentDto.setAppointmentDate(appointmentDate);
         appointmentDto.setStartTime(startTime);
         appointmentDto.setEndTime(endTime);
@@ -264,7 +294,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     }
 
     /**
-     * When appoitnment is out of normal business hours
+     * When appoitnment is in WEEKEND
      * Result: 400 "Appointment time is out of business hours!"
      * @throws ReservationAppException
      */
@@ -338,7 +368,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
 
             ExceptionMessage message = JsonUtils.toObject(responseResult.getResponse().getContentAsString(), ExceptionMessage.class);
             assertEquals(message.getMessage(), "Validation Failed");
-            assertEquals(message.getDetails().get(0), "The date must be today or in the future.");
+            assertEquals(message.getDetails().get(0), "The date selected is not valid. Please reserve a coming date!");
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
         }
@@ -348,12 +378,11 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * Result: list of appointments has the correct size.
      */
     @Test
-    @Disabled
     void getAllAppointments(){
 
         val result = createGetAsString(URL, String.class, TOKEN);
-        val resultList = JsonUtils.toList(result, AppointmentDto.class);
-        assertThat(resultList, hasSize(10));
+        val resultList = JsonUtils.toList(result, AppointmentResponseDto.class);
+        assertThat(resultList, hasSize(3));
 
     }
 
@@ -364,17 +393,13 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
      * @throws ReservationAppException
      */
     @Test
-    @Disabled
     void cancelAppointmentFailShortTime() throws ReservationAppException {
-        AppointmentDto appointmentDto = new AppointmentDto();
-        appointmentDto.setId(6l);
         try {
             mockMvc
                     .perform(
-                            MockMvcRequestBuilders.put(URL + "/cancel")
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 38)
                                     .header("Authorization", "Bearer " + TOKEN)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(JsonUtils.toJsonString(appointmentDto)))
+                                    .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest())
                     .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
                     .andExpect(result -> assertEquals("Too short time to cancel Appointment!", result.getResolvedException().getMessage()))
@@ -385,49 +410,709 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     }
 
     /**
-     * When appointment can be canceled successfully
-     * Result: 200 OK
-     */
-//    @Test
-//    @Disabled
-//    void cancelAppointmentSuccess() {
-//
-//        AppointmentDto appointmentDto = new AppointmentDto();
-//        appointmentDto.setId(9l);
-//
-//        val response = createPut(URL + "/cancel", appointmentDto, AppointmentDto.class, TOKEN);
-//        assertEquals(Status.CANCELED, response.getStatus());
-//
-//    }
-
-    /**
-     * When patient exists and appointment exists
-     * Result: 200 OK
+     * When appointment is in status DONE
+     * Result: 400 "Appointment is already canceled or DONE!"
+     * @throws ReservationAppException
      */
     @Test
-    @Disabled
-    void appointmentsByStatusAndPatientSuccess() {
+    void cancelAppointmentWhenStatusDONE() throws ReservationAppException {
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 38)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is already canceled or DONE!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status CANCELED_BY_PATIENT
+     * Result: 400 "Appointment is already canceled or DONE!"
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusCanceledByPatient() throws ReservationAppException {
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 38)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is already canceled or DONE!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status CANCELED_BY_DOCTOR
+     * Result: 400 "Appointment is already canceled or DONE!"
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusCanceledByDoctor() throws ReservationAppException {
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 38)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is already canceled or DONE!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status CANCELED_BY_SECRETARY
+     * Result: 400 "Appointment is already canceled or DONE!"
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusCanceledBySecretary() throws ReservationAppException {
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 38)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is already canceled or DONE!", result.getResolvedException().getMessage()))
+                    .andReturn();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status Pending
+     * Result: 200
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusPending() throws ReservationAppException {
+        try {
+            //Test when secretary is logged in. Expect status in DB to be 0 -> Pending
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 39)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            AppointmentResponseDto appointmentResponseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.CANCELED_BY_SECRETARY, appointmentResponseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status Approved
+     * Result: 200 CANCELED_BY_SECRETARY
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusApproved() throws ReservationAppException {
+        try {
+            //Test when secretary is logged. Expect status in DB to be 1 -> Approved
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 39)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            AppointmentResponseDto appointmentResponseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.CANCELED_BY_SECRETARY, appointmentResponseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status Pending
+     * Result: 200 CANCELED_BY_PATIENT
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusPendingAndPatientLoggedIn() throws ReservationAppException {
+        try {
+            //Test when patient is logged. Expect status in DB to be 0 -> Pending
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 39)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            AppointmentResponseDto appointmentResponseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.CANCELED_BY_PATIENT, appointmentResponseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status Pending
+     * Result: 200 CANCELED_BY_DOCTOR
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenStatusPendingAndDoctorLoggedIn() throws ReservationAppException {
+        try {
+            //Test when doctor is logged. Expect status in DB to be 0 -> Pending
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 39)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            AppointmentResponseDto appointmentResponseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.CANCELED_BY_DOCTOR, appointmentResponseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When appointment is in status Pending and does not belong to the logged in doctor
+     * Result: 400 You are not the owner of the appointment
+     * @throws ReservationAppException
+     */
+    @Test
+    void cancelAppointmentWhenAppointmentDoesNotBelongToDoctor() throws ReservationAppException {
+        try {
+            //Test when doctor is logged. Expect status in DB to be 0 -> Pending
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/cancel/" + 39)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("You are not the owner of the appointment", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * When no patient has active appointments
+     * Result: 200
+     * @throws ReservationAppException
+     */
+    @Test
+    void getPatientActiveAppointmentsOK() throws ReservationAppException {
         Long patientId = 3l;
         try {
-            val result =
-                    mockMvc
-                            .perform(
-                                    MockMvcRequestBuilders.get(URL + "/patientstatus/" + patientId)
-                                            .param("status", Status.PENDING.name())
-                                            .header("Authorization", "Bearer " + TOKEN)
-                                            .contentType(MediaType.APPLICATION_JSON))
-                            .andDo(print())
-                            .andExpect(status().isOk())
-                            .andReturn().getResponse().getContentAsString();
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/active/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
 
-            val listResponse = JsonUtils.toList(result, AppointmentDto.class);
-            assertThat(listResponse, hasSize(6));
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+            assertThat(responseDtos,hasSize(1));
 
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
 
         }
     }
+
+    /**
+     * When patient has no active appointment
+     * Result: 404 "No Appointment Found"
+     * @throws ReservationAppException
+     */
+    @Test
+    void getPatientActiveAppointmentsNoAppointmentFound() throws ReservationAppException {
+        Long patientId = 7l;
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/active/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
+                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
+
+    /**
+     * When patient has no CANCELED appointments
+     * Result: 404 "No Appointment Found"
+     * @throws ReservationAppException
+     */
+    @Test
+    void getPatientCanceledAppointmentsNoAppointmentFound() throws ReservationAppException {
+        Long patientId = 3l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/canceled/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
+                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
+
+    /**
+     * When patient has CANCELED appointments
+     * Result: 200
+     * @throws ReservationAppException
+     */
+    @Test
+    void getPatientCanceledAppointmentsOK() throws ReservationAppException {
+        Long patientId = 3l;
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/canceled/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+            assertThat(responseDtos, hasSize(1));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
+
+    /**
+     * When patient has FINISHED appointments
+     * Result: 200
+     * @throws ReservationAppException
+     */
+    @Test
+    void getPatientFinishedAppointmentsOK() throws ReservationAppException {
+        Long patientId = 3l;
+        try {
+            val response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/done/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> reponseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+
+            assertThat(reponseDtos, hasSize(2));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
+
+    @Test
+    void getPatientFinishedAppointmentsNoAppointmentFound() throws ReservationAppException {
+        Long patientId = 3l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/done/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
+                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+
+        }
+    }
+
+    @Test
+    void getPatientAllAppointmentsOK() {
+        Long patientId = 3l;
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/patient/all/" + patientId)
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+            assertThat(responseDtos, hasSize(3));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void getAllPendingAppointmentsOK(){
+        Long patientId = 3l;
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/status/pending")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+
+            long statusCounter = responseDtos.stream().filter(appointmentResponseDto -> appointmentResponseDto.getStatus().equals(Status.PENDING)).count();
+
+            assertThat(responseDtos, hasSize(3));
+            assertEquals(3, statusCounter);
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void getAllFinishedAppointmentsOK(){
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/status/done")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+
+            long statusCounter = responseDtos.stream().filter(appointmentResponseDto -> appointmentResponseDto.getStatus().equals(Status.DONE)).count();
+
+            assertThat(responseDtos, hasSize(1));
+            assertEquals(1, statusCounter);
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void getAllFinishedAppointmentsNoAppointmentFound() {
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/status/done")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
+                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void getAllCanceledAppointmentsOK(){
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/status/cancel")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AppointmentResponseDto> responseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
+
+            long statusCounter = responseDtos.stream().filter(appointmentResponseDto -> appointmentResponseDto.getStatus().equals(Status.CANCELED_BY_DOCTOR) ||
+                    appointmentResponseDto.getStatus().equals(Status.CANCELED_BY_PATIENT) ||
+                    appointmentResponseDto.getStatus().equals(Status.CANCELED_BY_SECRETARY))
+                    .count();
+
+            assertThat(responseDtos, hasSize(1));
+            assertEquals(1, statusCounter);
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void getAllCanceledAppointmentsNoAppointmentFound(){
+        try {
+            String response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.get(URL + "/status/cancel")
+                                    .header("Authorization", "Bearer " + TOKEN)
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
+                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusPending() {
+        Long appointmentId = 38l;
+        try {
+            val response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            val appointment = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.APPROVED, appointment.getStatus());
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusApproved() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusCanceled() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusDone() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusDoctorChangeRequest() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusDoctorChangeApprovedOK() {
+        Long appointmentId = 38l;
+        try {
+            val response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            AppointmentResponseDto responseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+            assertEquals(Status.APPROVED, responseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void approveAppointmentWhenStatusDoctorChangeRefused() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/approve/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()))
+                    .andReturn().getResponse().getContentAsString();
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void setAppointmentToDoneWhenStatusPending() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/done/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void setAppointmentToDoneWhenStatusDone() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/done/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void setAppointmentToDoneWhenStatusCanceled() {
+        Long appointmentId = 38l;
+        try {
+            mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/done/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof ReservationAppException))
+                    .andExpect(result -> assertEquals("Appointment is not in valid status for this operation", result.getResolvedException().getMessage()));
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Test
+    void setAppointmentToDoneWhenStatusApprovedOK() {
+        Long appointmentId = 38l;
+        try {
+            val response = mockMvc
+                    .perform(
+                            MockMvcRequestBuilders.put(URL + "/done/" + appointmentId)
+                                    .header("Authorization", "Bearer " + TOKEN))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            val reponseDto = JsonUtils.toObject(response, AppointmentResponseDto.class);
+
+            assertEquals(Status.DONE, reponseDto.getStatus());
+
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
 
     /**
      * Size of appointments with the status selected is returned correctly
@@ -448,7 +1133,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
                             .andExpect(status().isOk())
                             .andReturn().getResponse().getContentAsString();
 
-            val listResponse = JsonUtils.toList(result, AppointmentDto.class);
+            val listResponse = JsonUtils.toList(result, AppointmentResponseDto.class);
             assertThat(listResponse, hasSize(6));
 
         } catch (Exception e) {
@@ -466,7 +1151,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
     void appointmentsByPatientSuccess() {
         Long patientId = 3l;
         val response = createGetAsString(URL + "/patient/" + patientId, String.class, TOKEN);
-        val listResponse = JsonUtils.toList(response, AppointmentDto.class);
+        val listResponse = JsonUtils.toList(response, AppointmentResponseDto.class);
         assertThat(listResponse, hasSize(11));
     }
 
@@ -507,8 +1192,8 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         doctor.setId(5l);
         appointmentDto.setId(38l);
         appointmentDto.setDoctor(doctor);
-        val response = createPut(URL + "/change", appointmentDto, AppointmentDto.class, TOKEN);
-        assertEquals(5l, response.getDoctor().getId());
+        val response = createPut(URL + "/change", appointmentDto, AppointmentResponseDto.class, TOKEN);
+        assertEquals(5l, response.getDoctorName());
         assertEquals(Status.DOCTOR_CHANGE_REQUEST, response.getStatus());
     }
 
@@ -517,7 +1202,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         AppointmentDto appointmentDto = new AppointmentDto();
         appointmentDto.setId(38l);
         appointmentDto.setStatus(Status.DOCTOR_CHANGE_APPROVED);
-        val response = createPut(URL + "/patient/doctor-change", appointmentDto, AppointmentDto.class, TOKEN);
+        val response = createPut(URL + "/patient/doctor-change", appointmentDto, AppointmentResponseDto.class, TOKEN);
         assertEquals(Status.DOCTOR_CHANGE_APPROVED, response.getStatus());
     }
 
@@ -565,42 +1250,6 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         }
     }
 
-    @Test
-    void setAppointmentToDoneSuccess() {
-        try {
-            val response = mockMvc
-                    .perform(
-                            MockMvcRequestBuilders.put(URL + "/done/38")
-                                    .header("Authorization", "Bearer " + TOKEN))
-                    .andExpect(status().isOk())
-                    .andReturn().getResponse().getContentAsString();
-            val responseappointment = JsonUtils.toObject(response, AppointmentResponseDto.class);
-
-            assertEquals(Status.DONE, responseappointment.getStatus());
-
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    @Test
-    void approveAppointment() {
-        try {
-            val response = mockMvc
-                    .perform(
-                            MockMvcRequestBuilders.put(URL + "/approve/38")
-                                    .header("Authorization", "Bearer " + TOKEN))
-                    .andExpect(status().isOk())
-                    .andReturn().getResponse().getContentAsString();
-
-            val appointment = JsonUtils.toObject(response, AppointmentResponseDto.class);
-
-            assertEquals(Status.APPROVED, appointment.getStatus());
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
     /**
      * When doctor is not available in th selected time
      * Result: 400 "Doctor is not available in this time!"
@@ -638,7 +1287,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         AppointmentDto newAppointment = new AppointmentDto();
         newAppointment.setId(23l);
         newAppointment.setFeedback("Feedback completed");
-        val response = createPut(URL, newAppointment, AppointmentDto.class, TOKEN);
+        val response = createPut(URL, newAppointment, AppointmentResponseDto.class, TOKEN);
         assertEquals("Feedback completed", response.getFeedback());
     }
 
@@ -680,80 +1329,10 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
         newAppointment.setId(23l);
         newAppointment.setFeedback("UPDATED FEEDBACK");
         newAppointment.setStatus(Status.DONE);
-        val response = createPut(URL, newAppointment, AppointmentDto.class, TOKEN);
+        val response = createPut(URL, newAppointment, AppointmentResponseDto.class, TOKEN);
 
         assertEquals("UPDATED FEEDBACK", response.getFeedback());
         assertEquals(Status.DONE, response.getStatus());
-    }
-
-    /**
-     * When no patient is found with the requested id
-     * Result: 400 "No user was found with this id and role"
-     * @throws ReservationAppException
-     */
-    @Test
-    void getPatientCanceledAppointments() throws ReservationAppException {
-        Long patientId = 3l;
-        try {
-            mockMvc
-                    .perform(
-                            MockMvcRequestBuilders.get(URL + "/patient/canceled/" + patientId)
-                                    .header("Authorization", "Bearer " + TOKEN)
-                                    .contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andExpect(status().isNotFound())
-                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
-                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
-                    .andReturn().getResponse().getContentAsString();
-
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-
-        }
-    }
-
-    @Test
-    void getPatientActiveAppointments() throws ReservationAppException {
-        Long patientId = 3l;
-        try {
-            mockMvc
-                    .perform(
-                            MockMvcRequestBuilders.get(URL + "/patient/active/" + patientId)
-                                    .header("Authorization", "Bearer " + TOKEN)
-                                    .contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andExpect(status().isNotFound())
-                    .andExpect(result -> assertTrue(result.getResolvedException() instanceof AppointmentNotFoundException))
-                    .andExpect(result -> assertEquals("No Appointment found!", result.getResolvedException().getMessage()))
-                    .andReturn().getResponse().getContentAsString();
-
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-
-        }
-    }
-
-    @Test
-    void getPatientFinishedAppointments() throws ReservationAppException {
-        Long patientId = 3l;
-        try {
-            val response = mockMvc
-                    .perform(
-                            MockMvcRequestBuilders.get(URL + "/patient/done/" + patientId)
-                                    .header("Authorization", "Bearer " + TOKEN)
-                                    .contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andExpect(status().isOk())
-                    .andReturn().getResponse().getContentAsString();
-
-            List<AppointmentDto> reponseDtos = JsonUtils.toList(response, AppointmentDto.class);
-
-            assertThat(reponseDtos, hasSize(1));
-
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-
-        }
     }
 
     @Test
@@ -769,7 +1348,7 @@ public class AppointmentControllerTest extends ReservationAppTestSupport {
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
-            List<AppointmentDto> reponseDtos = JsonUtils.toList(response, AppointmentDto.class);
+            List<AppointmentResponseDto> reponseDtos = JsonUtils.toList(response, AppointmentResponseDto.class);
 
             assertThat(reponseDtos, hasSize(1));
 

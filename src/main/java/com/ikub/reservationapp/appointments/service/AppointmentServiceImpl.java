@@ -125,7 +125,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto cancelAppointment(Long appointmentId) throws ReservationAppException {//DONE
+    public AppointmentResponseDto cancelAppointment(Long appointmentId) throws ReservationAppException {//DONE
         String loggedInUsername = userService.getUsernameFromContext();
         log.info("Appointment id to cancel is: -> {}, authenticated username is: -> {}", appointmentId, loggedInUsername);
         val appointment = getAppointmentById(appointmentId);
@@ -147,16 +147,16 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.setStatus(Status.CANCELED_BY_SECRETARY);
         }
         log.info("Appointment successfully canceled!");
-        return appointmentMapper.toDto(appointmentRepository.save(appointment));
+        return appointmentMapper.toResponseDto(appointmentRepository.save(appointment));
     }
 
     @Override
     public boolean isEligibleAppointmentToCancel(AppointmentEntity appointment) {
-        val current = LocalDateTime.now();
-        val next = appointment.getStartTime();
-        val duration = Duration.between(current, next);
-        val seconds = duration.getSeconds();
-        val hoursDifference = seconds / 3600;
+        val currentTime = LocalDateTime.now();
+        val appointmentStartTime = appointment.getStartTime();
+        val durationBetweenCurrentTimeAndAppointmentStartTime = Duration.between(currentTime, appointmentStartTime);
+        val durationInSeconds = durationBetweenCurrentTimeAndAppointmentStartTime.getSeconds();
+        val hoursDifference = durationInSeconds / 3600;
         if (appointmentStatusIsValidForCancel(appointment)) {
             if (hoursDifference < 24) {
                 log.error("Too short time to cancel, appointment starts at: -> {}!", appointment.getStartTime());
@@ -177,7 +177,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getPatientCanceledAppointments(Long patientId) {
+    public List<AppointmentResponseDto> getPatientCanceledAppointments(Long patientId) {
         log.info("Searching canceled appointments for patientId -> {}", patientId);
         val patient = userService.findByIdAndRole(patientId, Role.PATIENT.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusCanceledAndPatient(userMapper.toEntity(patient)))) {
@@ -185,12 +185,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusCanceledAndPatient(userMapper.toEntity(patient))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getDoctorCanceledAppointments(Long doctorId) throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getDoctorCanceledAppointments(Long doctorId) throws AppointmentNotFoundException {
         log.info("Searching appointment with status canceled for doctorId -> {}", doctorId);
         val doctor = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusCanceledAndDoctor(userMapper.toEntity(doctor)))) {
@@ -198,12 +198,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusCanceledAndDoctor(userMapper.toEntity(doctor))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getPatientActiveAppointments(Long patientId) throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getPatientActiveAppointments(Long patientId) throws AppointmentNotFoundException {
         log.info("Searching active appointment for patientId -> {}", patientId);
         val patient = userService.findByIdAndRole(patientId, Role.PATIENT.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(Status.APPROVED, userMapper.toEntity(patient)))) {
@@ -211,12 +211,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndPatient(Status.APPROVED, userMapper.toEntity(patient))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getPatientFinishedAppointments(Long patientId) throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getPatientFinishedAppointments(Long patientId) throws AppointmentNotFoundException {
         log.info("Searching finished appointment for patientId -> {}", patientId);
         val patient = userService.findByIdAndRole(patientId, Role.PATIENT.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndPatient(Status.DONE, userMapper.toEntity(patient)))) {
@@ -224,12 +224,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndPatient(Status.DONE, userMapper.toEntity(patient))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getDoctorFinishedAppointments(Long doctorId) throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getDoctorFinishedAppointments(Long doctorId) throws AppointmentNotFoundException {
         log.info("Searching finished appointment for doctorId -> {}", doctorId);
         val doctor = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(Status.DONE, userMapper.toEntity(doctor)))) {
@@ -237,7 +237,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndDoctor(Status.DONE, userMapper.toEntity(doctor))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
@@ -258,10 +258,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getAllPendingAppointments() throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getAllPendingAppointments() throws AppointmentNotFoundException {
         log.info("Searching for PENDING appointments:");
         val appointments = appointmentRepository.findByStatus(Status.PENDING)
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(appointments)) {
             log.error("No pending appointment found");
@@ -271,10 +271,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getAllFinishedAppointments() throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getAllFinishedAppointments() throws AppointmentNotFoundException {
         log.info("Searching for DONE appointments:");
         val appointments = appointmentRepository.findByStatus(Status.DONE)
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(appointments)) {
             log.error("No pending appointment found");
@@ -284,7 +284,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getAllCanceledAppointments() throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getAllCanceledAppointments() throws AppointmentNotFoundException {
         log.info("Searching for CANCELED appointments:");
 
         List<Status> canceledStatuses = Arrays.stream(Status.values())
@@ -294,7 +294,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .collect(Collectors.toList());
 
         val appointments = appointmentRepository.findByStatusIn(canceledStatuses)
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(appointments)) {
             log.error("No CANCELED appointment found");
@@ -315,18 +315,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto updateAppointment(AppointmentDto newAppointment) {
+    public AppointmentResponseDto updateAppointment(AppointmentDto newAppointment) {
         log.info("Updating appointment: -> {}", newAppointment);
         val appointment = getAppointmentById(newAppointment.getId());
-        if (newAppointment.getStatus() != null && newAppointment.getStatus() == Status.DONE) {
-            if (roleService.hasRole(Role.SECRETARY.getRole()) && !StringUtils.isEmpty(appointment.getFeedback())) {
-                appointmentMapper.updateAppointmentFromDto(newAppointment, appointment);
-            } else {
-                log.error("Failed to update to DONE. Feedback is: -> {} and user role SECRETARY is: -> {}", appointment.getFeedback(), (roleService.hasRole(Role.SECRETARY.getRole())));
-                throw new ReservationAppException(BadRequest.FEEDBACK_MISSING.getMessage());
-            }
+        if (newAppointment.getStatus() != null) {
+            throw new ReservationAppException("status cannot be updated");
         }
-        return appointmentMapper.toDto(appointmentRepository.save(appointment));
+        appointmentMapper.updateAppointmentFromDto(newAppointment, appointment);
+        return appointmentMapper.toResponseDto(appointmentRepository.save(appointment));
     }
 
     @Override
@@ -347,7 +343,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getDoctorActiveAppointments(Long doctorId) throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getDoctorActiveAppointments(Long doctorId) throws AppointmentNotFoundException {
         log.info("Searching finished appointment for doctorId -> {}", doctorId);
         val doctor = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
         if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(Status.APPROVED, userMapper.toEntity(doctor)))) {
@@ -355,7 +351,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
         return appointmentRepository.findByStatusAndDoctor(Status.APPROVED, userMapper.toEntity(doctor))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
@@ -368,7 +364,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException {
+    public AppointmentResponseDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException {
         log.info("Changing doctor for appointment: -> {}", newAppointmentDto.getId());
         val appointment = getAppointmentById(newAppointmentDto.getId());
         if (appointment.getStatus() != Status.APPROVED && appointment.getStatus() != Status.PENDING) {
@@ -383,7 +379,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         val newDoctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
         appointment.setDoctor(userMapper.toEntity(newDoctor));
         appointment.setStatus(Status.DOCTOR_CHANGE_REQUEST);
-        return appointmentMapper.toDto(appointmentRepository.save(appointment));
+        return appointmentMapper.toResponseDto(appointmentRepository.save(appointment));
     }
 
     @Override
@@ -430,25 +426,25 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentDto> getPatientAllAppointments(Long patientId) {
+    public List<AppointmentResponseDto> getPatientAllAppointments(Long patientId) {
         val patientDto = userService.findByIdAndRole(patientId, Role.PATIENT.name());
         return appointmentRepository.findByPatient(userMapper.toEntity(patientDto))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getDoctorAllAppointments(Long doctorId) {
+    public List<AppointmentResponseDto> getDoctorAllAppointments(Long doctorId) {
         val doctorDto = userService.findByIdAndRole(doctorId, Role.DOCTOR.name());
         return appointmentRepository.findByDoctor(userMapper.toEntity(doctorDto))
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getAllAppointments() {
+    public List<AppointmentResponseDto> getAllAppointments() {
         return appointmentRepository.findAll()
-                .stream().map(appointmentMapper::toDto)
+                .stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 }

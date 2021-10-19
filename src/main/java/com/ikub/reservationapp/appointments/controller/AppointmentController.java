@@ -57,7 +57,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_PATIENT','ROLE_SECRETARY', 'ROLE_DOCTOR')")
     @PutMapping("/cancel/{id}")
-    public ResponseEntity<AppointmentDto> cancelAppointment(@PathVariable("id") Long appointmentId) throws ReservationAppException {
+    public ResponseEntity<AppointmentResponseDto> cancelAppointment(@PathVariable("id") Long appointmentId) throws ReservationAppException {
         log.info("Canceling an appointment...");
         return new ResponseEntity<>(appointmentService.cancelAppointment(appointmentId), HttpStatus.OK);
     }
@@ -70,7 +70,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/canceled/{id}")
-    public ResponseEntity<List<AppointmentDto>> getPatientCanceledAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
+    public ResponseEntity<List<AppointmentResponseDto>> getPatientCanceledAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
         log.info("Retrieving all canceled appointments for patient...");
         return new ResponseEntity<>(appointmentService.getPatientCanceledAppointments(patientId), HttpStatus.OK);
     }
@@ -83,7 +83,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/active/{id}")
-    public ResponseEntity<List<AppointmentDto>> getPatientActiveAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
+    public ResponseEntity<List<AppointmentResponseDto>> getPatientActiveAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
         log.info("Retrieving all active appointments for patient...");
         return new ResponseEntity<>(appointmentService.getPatientActiveAppointments(patientId), HttpStatus.OK);
     }
@@ -96,7 +96,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/done/{id}")
-    public ResponseEntity<List<AppointmentDto>> getPatientFinishedAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
+    public ResponseEntity<List<AppointmentResponseDto>> getPatientFinishedAppointments(@PathVariable("id") Long patientId) throws AppointmentNotFoundException {
         log.info("Retrieving all DONE appointments for patient...");
         return new ResponseEntity<>(appointmentService.getPatientFinishedAppointments(patientId), HttpStatus.OK);
     }
@@ -107,7 +107,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status/pending")
-    public ResponseEntity<List<AppointmentDto>> getAllPendingAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getAllPendingAppointments() {
         log.info("Retrieving pending appointments...");
         return new ResponseEntity<>(appointmentService.getAllPendingAppointments(), HttpStatus.OK);
     }
@@ -118,7 +118,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status/done")
-    public ResponseEntity<List<AppointmentDto>> getAllFinishedAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getAllFinishedAppointments() {
         log.info("Retrieving finished appointments...");
         return new ResponseEntity<>(appointmentService.getAllFinishedAppointments(), HttpStatus.OK);
     }
@@ -129,7 +129,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status/cancel")
-    public ResponseEntity<List<AppointmentDto>> getAllCanceledAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getAllCanceledAppointments() {
         log.info("Retrieving finished appointments...");
         return new ResponseEntity<>(appointmentService.getAllCanceledAppointments(), HttpStatus.OK);
     }
@@ -163,7 +163,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/all/{id}")
-    public ResponseEntity<List<AppointmentDto>> getPatientAllAppointments(@PathVariable("id") Long patientId) {
+    public ResponseEntity<List<AppointmentResponseDto>> getPatientAllAppointments(@PathVariable("id") Long patientId) {
         log.info("Retrieving appointments by patient id...");
         return new ResponseEntity<>(appointmentService.getPatientAllAppointments(patientId), HttpStatus.OK);
     }
@@ -175,7 +175,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasAnyRole('ROLE_DOCTOR','ROLE_PATIENT','ROLE_SECRETARY')")
     @PutMapping
-    public ResponseEntity<AppointmentDto> updateAppointment(@RequestBody @Valid AppointmentDto appointmentDto) {
+    public ResponseEntity<AppointmentResponseDto> updateAppointment(@RequestBody @Valid AppointmentDto appointmentDto) {
         log.info("Updating appointment...");
         return new ResponseEntity<>(appointmentService.updateAppointment(appointmentDto), HttpStatus.OK);
     }
@@ -187,7 +187,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @PutMapping("/change")
-    public ResponseEntity<AppointmentDto> changeDoctor(@RequestBody AppointmentDto newAppointmentDto) throws ReservationAppException {
+    public ResponseEntity<AppointmentResponseDto> changeDoctor(@RequestBody AppointmentDto newAppointmentDto) throws ReservationAppException {
         log.info("Changing doctor for an appointment...");
         return new ResponseEntity<>(appointmentService.changeDoctor(newAppointmentDto), HttpStatus.OK);
     }
@@ -211,7 +211,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/{id}")
-    public ResponseEntity<List<AppointmentDto>> getDoctorAllAppointments(@PathVariable("id") Long doctorId) {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorAllAppointments(@PathVariable("id") Long doctorId) {
         log.info("Retrieving appointments by doctor id...");
         return new ResponseEntity<>(appointmentService.getDoctorAllAppointments(doctorId), HttpStatus.OK);
     }
@@ -222,7 +222,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping
-    public ResponseEntity<List<AppointmentDto>> getAllAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointments() {
         log.info("Retrieving all appointments...");
         return new ResponseEntity<>(appointmentService.getAllAppointments(), HttpStatus.OK);
     }
@@ -234,7 +234,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/active/{id}")
-    public ResponseEntity<List<AppointmentDto>> getDoctorActiveAppointments(@PathVariable("id") Long doctorId) {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorActiveAppointments(@PathVariable("id") Long doctorId) {
         log.info("Retrieving all appointments by status and doctor...");
         return new ResponseEntity<>(appointmentService.getDoctorActiveAppointments(doctorId), HttpStatus.OK);
     }
@@ -246,7 +246,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/canceled/{id}")
-    public ResponseEntity<List<AppointmentDto>> getDoctorCanceledAppointments(@PathVariable("id") Long doctorId) {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorCanceledAppointments(@PathVariable("id") Long doctorId) {
         log.info("Retrieving all appointments by status and doctor...");
         return new ResponseEntity<>(appointmentService.getDoctorCanceledAppointments(doctorId), HttpStatus.OK);
     }
@@ -258,7 +258,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/done/{id}")
-    public ResponseEntity<List<AppointmentDto>> getDoctorFinishedAppointments(@PathVariable("id") Long doctorId) {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorFinishedAppointments(@PathVariable("id") Long doctorId) {
         log.info("Retrieving all appointments by status and doctor...");
         return new ResponseEntity<>(appointmentService.getDoctorFinishedAppointments(doctorId), HttpStatus.OK);
     }

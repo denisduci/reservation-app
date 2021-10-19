@@ -23,7 +23,7 @@ public class AppointmentDto {
 
     private Long id;
 
-    @FutureOrPresent(message = "The date must be today or in the future.")
+    @FutureOrPresent(message = "The date selected is not valid. Please reserve a coming date!")
     @NotNull(message = "Appointment date must not be empty")
     private LocalDate appointmentDate;
 
