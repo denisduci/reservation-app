@@ -1,7 +1,6 @@
 package com.ikub.reservationapp.appointment.controller;
 
 import com.ikub.reservationapp.ReservationAppTestSupport;
-import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
@@ -32,7 +31,6 @@ import  static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;

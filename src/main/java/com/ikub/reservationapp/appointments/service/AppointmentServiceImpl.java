@@ -1,7 +1,6 @@
 package com.ikub.reservationapp.appointments.service;
 
 import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
-import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
@@ -24,7 +23,6 @@ import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundExcepti
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import lombok.val;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

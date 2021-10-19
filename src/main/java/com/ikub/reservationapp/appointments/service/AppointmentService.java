@@ -1,6 +1,5 @@
 package com.ikub.reservationapp.appointments.service;
 
-import com.ikub.reservationapp.appointments.dto.AppointmentDateHourDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDateTimeDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.dto.AppointmentResponseDto;
