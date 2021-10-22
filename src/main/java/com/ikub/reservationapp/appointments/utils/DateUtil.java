@@ -1,13 +1,18 @@
 package com.ikub.reservationapp.appointments.utils;
 
 import com.ikub.reservationapp.appointments.constants.AppointmentConstants;
-import com.ikub.reservationapp.common.enums.Status;
+import com.ikub.reservationapp.common.exception.BadRequest;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,5 +54,28 @@ public final class DateUtil {
         }
         log.info("All available hours for date: -> {} are: -> {}", nextDate, availableHours);
         return availableHours;
+    }
+
+    public static boolean isOverlapping(LocalDateTime start1, LocalDateTime end1, LocalDateTime start2, LocalDateTime end2) {
+        return start1.compareTo(end2) < 0 && end1.compareTo(start2) > 0;
+    }
+
+    public static LocalDate validateDateFormat(String date) throws ReservationAppException {
+        if (date == null || StringUtils.isEmpty(date)) {
+            log.error("Date is empty");
+            throw new ReservationAppException(BadRequest.INVALID_DATE_FORMAT.getMessage());
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-mm-dd");
+        LocalDate localDateFormat;
+        try {
+            TemporalAccessor temporalAccessor = formatter.ISO_DATE.parse(date);
+            localDateFormat = LocalDate.of(
+                    temporalAccessor.get(ChronoField.YEAR),
+                    temporalAccessor.get(ChronoField.MONTH_OF_YEAR),
+                    temporalAccessor.get(ChronoField.DAY_OF_MONTH));
+        } catch (DateTimeParseException e) {
+            throw new ReservationAppException(BadRequest.INVALID_DATE_FORMAT.getMessage());
+        }
+        return localDateFormat;
     }
 }

@@ -4,6 +4,10 @@ import com.ikub.reservationapp.appointments.dto.reports.ReportDBResponseDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.users.entity.UserEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -11,18 +15,18 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface AppointmentRepository extends CrudRepository<AppointmentEntity, Long> {
+public interface AppointmentRepository extends CrudRepository<AppointmentEntity, Long>, JpaSpecificationExecutor<AppointmentEntity> {
 
     List<AppointmentEntity> findByStatus(Status status);
 
     List<AppointmentEntity> findByStatusIn(List<Status> statuses);
 
-    //@Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime")
+    List<AppointmentEntity> findByAppointmentDate(LocalDate appointmentDate);
+
     @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime AND a.status NOT IN (3,4,5)")
-    List<AppointmentEntity> findByAppointmentDate(@Param("appointmentDateTime") LocalDate appointmentDate);
+    List<AppointmentEntity> findByAppointmentDateAndNotCanceled(@Param("appointmentDateTime") LocalDate appointmentDate);
 
     @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.doctor=:doctorId AND a.status NOT IN (3,4,5)")
     // working version @Query("SELECT a FROM AppointmentEntity a WHERE ((:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) OR (:appointmentStartTime BETWEEN a.startTime AND a.endTime)) AND a.doctor=:doctorId")
@@ -30,10 +34,9 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
                                                      @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                      @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
 
-    @Query("SELECT a FROM AppointmentEntity a WHERE (:appointmentStartTime >= a.startTime AND :appointmentEndTime <= a.endTime) AND a.patient=:patientId AND a.status NOT IN (3,4,5)")
-    List<AppointmentEntity> findAppointmentForPatient(@Param("patientId") UserEntity patientId,
-                                                      @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
-                                                      @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
+    List<AppointmentEntity> findByAppointmentDateAndPatient(LocalDate date, UserEntity patient);
+
+    List<AppointmentEntity> findByAppointmentDateAndDoctor(LocalDate date, UserEntity doctor);
 
     @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (3,4,5)")
     List<AppointmentEntity> findByStatusCanceledAndPatient(@Param(("patientId")) UserEntity patientId);
@@ -47,6 +50,9 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
     List<AppointmentEntity> findByPatient(UserEntity patient);
     List<AppointmentEntity> findByDoctor(UserEntity doctor);
     List<AppointmentEntity> findAll();
+    Page<AppointmentEntity> findAll(Pageable pageable);
+    Page<AppointmentEntity> findByStatus(Status status, Pageable pageable);
+    List<AppointmentEntity> findAll(Specification<AppointmentEntity> specification);
 
     @Query(value="SELECT new com.ikub.reservationapp.appointments.dto.reports.ReportDBResponseDto(date_trunc('week', a.appointmentDate), count(*), a.status) FROM " +
             "AppointmentEntity a GROUP BY date_trunc('week', a.appointmentDate), a.status ORDER BY date_trunc('week',a.appointmentDate) DESC")

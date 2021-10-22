@@ -9,7 +9,9 @@ import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.common.model.AuthToken;
 import com.ikub.reservationapp.security.TokenProvider;
+import com.ikub.reservationapp.users.constants.Constants;
 import com.ikub.reservationapp.users.dto.UserDto;
+import com.ikub.reservationapp.users.dto.UserResponseDto;
 import com.ikub.reservationapp.users.dto.UserUpdateDto;
 import com.ikub.reservationapp.users.entity.RoleEntity;
 import com.ikub.reservationapp.users.entity.UserEntity;
@@ -18,10 +20,16 @@ import com.ikub.reservationapp.users.exception.UserNotFoundException;
 import com.ikub.reservationapp.users.mapper.RoleMapper;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.repository.UserRepository;
+import com.ikub.reservationapp.users.dto.UserSearchRequestDto;
+import com.ikub.reservationapp.users.specifications.UserSpecification;
 import com.ikub.reservationapp.users.validators.PasswordValidationUtil;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -55,6 +63,8 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     private TokenProvider jwtTokenUtil;
     @Autowired
     private PasswordValidationUtil passwordValidation;
+    @Autowired
+    private UserSpecification userSpecification;
 
     public UserDetails loadUserByUsername(String username) {
         UserEntity user = userMapper.toEntity(findByUsername(username));
@@ -113,9 +123,17 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
-    public List<UserDto> findAll() {
-        return userRepository.findAll()
-                .stream().map(userMapper::toDto)
+    public List<UserResponseDto> findAll(UserSearchRequestDto userRequest) {
+        if (!Optional.ofNullable(userRequest).isPresent())
+            return userRepository.findAll().stream().map(userMapper::toResponseDto)
+                    .collect(Collectors.toList());
+        if (userRequest.getPageSize() == null)
+            userRequest.setPageSize(Constants.DEFAULT_PAGE_SIZE);
+        if (userRequest.getPageNumber() == null)
+            userRequest.setPageNumber(Constants.DEFAULT_PAGE_NUMBER);
+        Pageable pageRequest = PageRequest.of(userRequest.getPageNumber() - 1, userRequest.getPageSize());
+
+        return userRepository.findAll(pageRequest).stream().map(userMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
@@ -161,5 +179,29 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         return userDetails.getUsername();
+    }
+
+    @Override
+    public List<UserResponseDto> getUserList(UserSearchRequestDto userRequest) {
+        List<UserEntity> usersMatched;
+        Page<UserEntity> pages;
+        if (userRequest.getPageNumber() == null) {
+            pages = new PageImpl<>(userRepository.findAll(userSpecification.getUsers(userRequest)));
+        } else {
+            if (userRequest.getPageSize() == null) {
+                userRequest.setPageSize(10);
+            }
+            Pageable paging = PageRequest.of(userRequest.getPageNumber() - 1, userRequest.getPageSize());
+            pages = userRepository.findAll(userSpecification.getUsers(userRequest), paging);
+        }
+        if (pages != null && pages.getContent() != null) {
+            usersMatched = pages.getContent();
+            if (usersMatched != null && usersMatched.size() > 0) {
+                List<UserResponseDto> responseDtos = usersMatched.stream().map(userMapper::toResponseDto)
+                        .collect(Collectors.toList());
+                return responseDtos;
+            }
+        }
+        throw new UserNotFoundException(NotFound.USER.getMessage());
     }
 }

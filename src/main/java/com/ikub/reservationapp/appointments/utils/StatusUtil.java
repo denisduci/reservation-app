@@ -20,11 +20,11 @@ public final class StatusUtil {
             case APPROVED:
                 switch (oldStatus) {
                     case PENDING:
-                        log.info("setting from PENDING to approved");
+                        log.info("setting from PENDING to APPROVED");
                         canOverwrite = true;
                         break;
                     case DONE:
-                        log.error("cannot change from DONE");
+                        log.error("cannot change from DONE to APPROVED");
                         canOverwrite = false;
                         break;
                     case DOCTOR_CHANGE_APPROVED:
@@ -32,7 +32,7 @@ public final class StatusUtil {
                         canOverwrite = true;
                         break;
                     default:
-                        log.error("invalid status");
+                        log.error("cannot set from this status to APPROVED");
                         canOverwrite = false;
                         break;
                 }
@@ -44,7 +44,7 @@ public final class StatusUtil {
                         canOverwrite = true;
                         break;
                     default:
-                        log.error("invalid status");
+                        log.error("cannot set from this status to DONE");
                         canOverwrite = false;
                         break;
                 }
@@ -54,15 +54,15 @@ public final class StatusUtil {
             case CANCELED_BY_SECRETARY:
                 switch (oldStatus) {
                     case PENDING:
-                        log.info("from PENDING to CANCELED_BY_PATIENT");
+                        log.info("setting from PENDING to CANCELED");
                         canOverwrite = true;
                         break;
                     case APPROVED:
-                        log.info("from APPROVED to CANCELED_BY_PATIENT");
+                        log.info("setting from APPROVED to CANCELED");
                         canOverwrite = true;
                         break;
                     default:
-                        log.error("invalid status");
+                        log.error("cannot set from this status to CANCELED");
                         canOverwrite = false;
                         break;
                 }
@@ -70,11 +70,11 @@ public final class StatusUtil {
             case DOCTOR_CHANGE_REQUEST:
                 switch (oldStatus) {
                     case PENDING:
-                        log.info("from pending to ...");
+                        log.info("from pending to DOCTOR_CHANGE_REQUEST");
                         canOverwrite = true;
                         break;
                     case APPROVED:
-                        log.info("from approved to ...");
+                        log.info("from APPROVED to DOCTOR_CHANGE_REQUEST");
                         canOverwrite = true;
                         break;
                     default:
@@ -86,7 +86,7 @@ public final class StatusUtil {
             case DOCTOR_CHANGE_REFUSED:
                 switch (oldStatus) {
                     case DOCTOR_CHANGE_REQUEST:
-                        log.info("from request to approved");
+                        log.info("from DOCTOR_CHANGE_REQUEST to DOCTOR_CHANGE_APPROVED/REFUSED");
                         canOverwrite = true;
                         break;
                     default:

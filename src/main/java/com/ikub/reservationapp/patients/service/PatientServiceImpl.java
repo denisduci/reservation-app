@@ -1,11 +1,15 @@
 package com.ikub.reservationapp.patients.service;
 
+import com.ikub.reservationapp.appointments.dto.AppointmentDto;
+import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
+import com.ikub.reservationapp.appointments.utils.DateUtil;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.patients.repository.PatientRepository;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,8 +44,17 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public boolean hasAppointment(UserDto patient, LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findAppointmentForPatient(userMapper.toEntity(patient), start, end)
-                .stream().count() > 0;
+    public boolean hasAppointment(AppointmentDto appointmentDto, UserDto patient) {
+        val patientAppointments = appointmentRepository.findByAppointmentDateAndPatient(appointmentDto.getAppointmentDate(), userMapper.toEntity(patient));
+
+        List<AppointmentEntity> overlappingAppointments = patientAppointments.stream().filter(appointmentEntity ->
+                DateUtil.isOverlapping(appointmentDto.getStartTime(), appointmentDto.getEndTime(),
+                        appointmentEntity.getStartTime(),
+                        appointmentEntity.getEndTime()) == true)
+                .collect(Collectors.toList());
+
+        if (overlappingAppointments.stream().count() > 0)
+            return true;
+        return false;
     }
 }

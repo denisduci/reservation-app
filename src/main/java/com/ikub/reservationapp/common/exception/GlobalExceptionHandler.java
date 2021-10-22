@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
 import java.util.*;
 
 @Slf4j
@@ -58,6 +57,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         exception.setDetails(details);
 
         return new ResponseEntity<>(exception, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(value = IllegalArgumentException.class)
+    public ResponseEntity generalException(IllegalArgumentException illegalArgumentException) {
+        return new ResponseEntity(illegalArgumentException.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @Override
