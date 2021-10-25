@@ -19,11 +19,7 @@ import java.util.List;
 @Repository
 public interface AppointmentRepository extends CrudRepository<AppointmentEntity, Long>, JpaSpecificationExecutor<AppointmentEntity> {
 
-    List<AppointmentEntity> findByStatus(Status status);
-
-    List<AppointmentEntity> findByStatusIn(List<Status> statuses);
-
-    List<AppointmentEntity> findByAppointmentDate(LocalDate appointmentDate);
+    Page<AppointmentEntity> findByStatusIn(List<Status> statuses, Pageable page);
 
     @Query("SELECT a FROM AppointmentEntity a WHERE a.appointmentDate =:appointmentDateTime AND a.status NOT IN (3,4,5)")
     List<AppointmentEntity> findByAppointmentDateAndNotCanceled(@Param("appointmentDateTime") LocalDate appointmentDate);
@@ -36,22 +32,26 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
 
     List<AppointmentEntity> findByAppointmentDateAndPatient(LocalDate date, UserEntity patient);
 
-    List<AppointmentEntity> findByAppointmentDateAndDoctor(LocalDate date, UserEntity doctor);
-
     @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (3,4,5)")
     List<AppointmentEntity> findByStatusCanceledAndPatient(@Param(("patientId")) UserEntity patientId);
 
     @Query("SELECT a FROM AppointmentEntity a WHERE a.doctor=:doctorId AND a.status IN (3,4,5)")
-    List<AppointmentEntity> findByStatusCanceledAndDoctor(@Param(("doctorId")) UserEntity doctorId);
+    Page<AppointmentEntity> findByStatusCanceledAndDoctor(@Param(("doctorId")) UserEntity doctorId, Pageable page);
 
-    List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patientId);
-    List<AppointmentEntity> findByStatusAndDoctor(Status status, UserEntity doctor);
+    List<AppointmentEntity> findByStatusAndPatient(Status status, UserEntity patient);
 
-    List<AppointmentEntity> findByPatient(UserEntity patient);
-    List<AppointmentEntity> findByDoctor(UserEntity doctor);
+    Page<AppointmentEntity> findByStatusAndDoctor(Status status, UserEntity doctor, Pageable page);
+
+    Page<AppointmentEntity> findByPatient(UserEntity patient, Pageable page);
+
+    Page<AppointmentEntity> findByDoctor(UserEntity doctor, Pageable page);
+
     List<AppointmentEntity> findAll();
+
     Page<AppointmentEntity> findAll(Pageable pageable);
+
     Page<AppointmentEntity> findByStatus(Status status, Pageable pageable);
+
     List<AppointmentEntity> findAll(Specification<AppointmentEntity> specification);
 
     @Query(value="SELECT new com.ikub.reservationapp.appointments.dto.reports.ReportDBResponseDto(date_trunc('week', a.appointmentDate), count(*), a.status) FROM " +

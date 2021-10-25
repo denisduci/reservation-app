@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import javax.validation.Valid;
 import java.util.List;
 
@@ -93,72 +92,33 @@ public class AppointmentController {
     }
 
     /**
+     * @param searchRequestDto pageNumber, pageSize
      * @return List<AppointmentResponseDto> list of all patient appointments in all statuses
      */
     @PreAuthorize("hasRole('ROLE_PATIENT')")
     @GetMapping("/patient/all")
-    public ResponseEntity<List<AppointmentResponseDto>> getPatientAllAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getPatientAllAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving appointments by patient id...");
-        return new ResponseEntity<>(appointmentService.getPatientAllAppointments(), HttpStatus.OK);
-    }
-
-    /**
-     * @return List<AppointmentResponseDto> list of all patient appointments in @localDate
-     */
-    @PreAuthorize("hasRole('ROLE_PATIENT')")
-    @GetMapping("/patient/date")
-    public ResponseEntity<List<AppointmentResponseDto>> getPatientAppointmentsInSpecificDay(@RequestParam("date") String localDate) {
-        log.info("Retrieving appointments for patient in date...");
-        return new ResponseEntity<>(appointmentService.getPatientAppointmentsInSpecificDay(localDate), HttpStatus.OK);
-    }
-
-    /**
-     * @return List<AppointmentResponseDto> list of all appointments in specific day
-     */
-    @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping("/date")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointmentsInSpecificDay(@RequestParam("date") String localDate) {
-        log.info("Retrieving appointments for date...");
-        return new ResponseEntity<>(appointmentService.getAllAppointmentsInSpecificDay(localDate), HttpStatus.OK);
-    }
-
-    /**
-     * @return List<AppointmentResponseDto> list of all appointments in specific day with specification
-     */
-    @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping("/date/specification")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointmentsInSpecificDayWithSpecification(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
-        log.info("Retrieving appointments for patient in date...");
-        return new ResponseEntity<>(appointmentService.getAllAppointmentsInSpecificDay(searchRequestDto), HttpStatus.OK);
-    }
-
-    /**
-     * @return List<AppointmentResponseDto> list of all doctor appointments in @localDate
-     */
-    @PreAuthorize("hasRole('ROLE_DOCTOR')")
-    @GetMapping("/doctor/date")
-    public ResponseEntity<List<AppointmentResponseDto>> getDoctorAppointmentsInSpecificDay(@RequestParam("date") String localDate) throws AppointmentNotFoundException, ReservationAppException {
-        log.info("Retrieving appointments for doctor in date...");
-        return new ResponseEntity<>(appointmentService.getDoctorAppointmentsInSpecificDay(localDate), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getPatientAllAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
      * @return List<AppointmentResponseDto> all pending appointments
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping("/status/pending")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllPendingAppointments() {
+    @GetMapping("/pending")
+    public ResponseEntity<List<AppointmentResponseDto>> getAllPendingAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving pending appointments...");
-        return new ResponseEntity<>(appointmentService.getAllPendingAppointments(), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getAllPendingAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
      * @return List<AppointmentResponseDto> all finished appointments
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping("/status/done")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllFinishedAppointments(@RequestBody(required = false) AppointmentSearchRequestDto searchRequestDto) {
-        log.info("Retrieving finished appointments...");
+    @GetMapping("/done")
+    public ResponseEntity<List<AppointmentResponseDto>> getAllFinishedAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving all finished appointments...");
         return new ResponseEntity<>(appointmentService.getAllFinishedAppointments(searchRequestDto), HttpStatus.OK);
     }
 
@@ -166,10 +126,20 @@ public class AppointmentController {
      * @return List<AppointmentResponseDto> all canceled appointments
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping("/status/cancel")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllCanceledAppointments() {
-        log.info("Retrieving finished appointments...");
-        return new ResponseEntity<>(appointmentService.getAllCanceledAppointments(), HttpStatus.OK);
+    @GetMapping("/canceled")
+    public ResponseEntity<List<AppointmentResponseDto>> getAllCanceledAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving canceled appointments...");
+        return new ResponseEntity<>(appointmentService.getAllCanceledAppointments(searchRequestDto), HttpStatus.OK);
+    }
+
+    /**
+     * @return List<AppointmentResponseDto> all approved appointments
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping("/approved")
+    public ResponseEntity<List<AppointmentResponseDto>> getAllApprovedAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving approved appointments...");
+        return new ResponseEntity<>(appointmentService.getAllApprovedAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
@@ -177,7 +147,7 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
     @GetMapping("/status/pagination")
-    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointmentsWithStatusAndPagination(@RequestBody(required = false) AppointmentSearchRequestDto searchRequestDto) {
+    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointmentsWithStatusAndPagination(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving finished appointments...");
         return new ResponseEntity<>(appointmentService.getAllAppointmentsWithStatusAndPagination(searchRequestDto), HttpStatus.OK);
     }
@@ -240,19 +210,9 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/all")
-    public ResponseEntity<List<AppointmentResponseDto>> getDoctorAllAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorAllAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving appointments by doctor id...");
-        return new ResponseEntity<>(appointmentService.getDoctorAllAppointments(), HttpStatus.OK);
-    }
-
-    /**
-     * @return List<AppointmentResponseDto> all appointments in all statuses
-     */
-    @PreAuthorize("hasRole('ROLE_SECRETARY')")
-    @GetMapping
-    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointments(@RequestParam("pageNumber") Integer pageNumber, @RequestParam("size") Integer size) {
-        log.info("Retrieving all appointments...");
-        return new ResponseEntity<>(appointmentService.getAllAppointments(pageNumber, size), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getDoctorAllAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
@@ -260,9 +220,9 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/active")
-    public ResponseEntity<List<AppointmentResponseDto>> getDoctorActiveAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorActiveAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving all appointments by status and doctor...");
-        return new ResponseEntity<>(appointmentService.getDoctorActiveAppointments(), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getDoctorActiveAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
@@ -270,9 +230,9 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/canceled")
-    public ResponseEntity<List<AppointmentResponseDto>> getDoctorCanceledAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorCanceledAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving all appointments by status and doctor...");
-        return new ResponseEntity<>(appointmentService.getDoctorCanceledAppointments(), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getDoctorCanceledAppointments(searchRequestDto), HttpStatus.OK);
     }
 
     /**
@@ -280,11 +240,21 @@ public class AppointmentController {
      */
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
     @GetMapping("/doctor/done")
-    public ResponseEntity<List<AppointmentResponseDto>> getDoctorFinishedAppointments() {
+    public ResponseEntity<List<AppointmentResponseDto>> getDoctorFinishedAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving all appointments by status and doctor...");
-        return new ResponseEntity<>(appointmentService.getDoctorFinishedAppointments(), HttpStatus.OK);
+        return new ResponseEntity<>(appointmentService.getDoctorFinishedAppointments(searchRequestDto), HttpStatus.OK);
     }
 
+
+    /**
+     * @return List<AppointmentResponseDto> all appointments in all statuses
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping
+    public ResponseEntity<List<AppointmentResponseDto>> getAllAppointments(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving all appointments...");
+        return new ResponseEntity<>(appointmentService.getAllAppointments(searchRequestDto), HttpStatus.OK);
+    }
 
     /**
      * @param appointmentDto appointment to update feedback
@@ -325,5 +295,17 @@ public class AppointmentController {
     public ResponseEntity<List<DoctorReportDto>> generateDoctorReport() {
         log.info("Generating report based on doctor...");
         return new ResponseEntity<>(reportService.findDoctorsReport(), HttpStatus.OK);
+    }
+
+    /**
+     *
+     * @param searchRequestDto date, doctorName, patientName, pageNumber, pageSize
+     * @return
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping("/specification")
+    public ResponseEntity<List<AppointmentResponseDto>> searchAppointmentWithSpecification(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving appointments with specification...");
+        return new ResponseEntity<>(appointmentService.searchAppointmentWithSpecification(searchRequestDto), HttpStatus.OK);
     }
 }

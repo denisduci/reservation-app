@@ -72,7 +72,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         datesToIterate.forEach(nextDate -> {
             List<LocalDateTime> reservedHours = new ArrayList<>();
             List<LocalDateTime> availableHours = DateUtil.createAllAvailableHours(nextDate);//1-Create All available hours for nextDate
-            List<AppointmentDto> reservedAppointments = getAppointmentByDate(nextDate);
+            List<AppointmentDto> reservedAppointments = getAppointmentByDateAndNotCanceled(nextDate);
             log.info("Reserved appointments in date: -> {} are: -> {}", nextDate, reservedAppointments);
 
             reservedAppointments.forEach(reservedAppointment -> { //2-Create ALL Reserved Hours
@@ -209,19 +209,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getDoctorCanceledAppointments() throws AppointmentNotFoundException {
-        log.info("Searching appointment with status canceled for doctorId -> {}", userService.getUsernameFromContext());
-        val doctor = userService.findByUsername(userService.getUsernameFromContext());
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusCanceledAndDoctor(userMapper.toEntity(doctor)))) {
-            log.error("No appointment found with status canceled for doctorId: -> {}", doctor);
-            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
-        }
-        return appointmentRepository.findByStatusCanceledAndDoctor(userMapper.toEntity(doctor))
-                .stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public List<AppointmentResponseDto> getPatientActiveAppointments() throws AppointmentNotFoundException {
         log.info("Searching active appointment for patientId -> {}", userService.getUsernameFromContext());
         val patient = userService.findByUsername(userService.getUsernameFromContext());
@@ -248,47 +235,41 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getPatientAppointmentsInSpecificDay(String date) throws AppointmentNotFoundException, ReservationAppException {
-        log.info("Searching finished appointment for patient -> {} in date -> {}", userService.getUsernameFromContext(), date);
+    public List<AppointmentResponseDto> getPatientAllAppointments(AppointmentSearchRequestDto searchRequestDto) {
+        val patientDto = userService.findByUsername(userService.getUsernameFromContext());
+        log.info("Retrieving appointments for patient: -> {}", userService.getUsernameFromContext());
 
-        val appointmentDateToSearch = DateUtil.validateDateFormat(date);
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
 
-        val patient = userService.findByUsername(userService.getUsernameFromContext());
-        val appointments = appointmentRepository.findByAppointmentDateAndPatient(appointmentDateToSearch, userMapper.toEntity(patient));
-        if (CollectionUtils.isEmpty(appointments)) {
-            log.error("No appointment Found!");
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+        val appointmentsPage = appointmentRepository.findByPatient(userMapper.toEntity(patientDto), page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())){
+            log.error("No appointments found...");
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        return appointments.stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<AppointmentResponseDto> getDoctorAppointmentsInSpecificDay(String date) throws AppointmentNotFoundException, ReservationAppException {
-        log.info("Searching finished appointment for doctor -> {} in date -> {}", userService.getUsernameFromContext(), date);
-
-        val appointmentDateToSearch = DateUtil.validateDateFormat(date);
-
-        val doctor = userService.findByUsername(userService.getUsernameFromContext());
-        val appointments = appointmentRepository.findByAppointmentDateAndDoctor(appointmentDateToSearch, userMapper.toEntity(doctor));
-        if (CollectionUtils.isEmpty(appointments)) {
-            log.error("No appointment Found!");
-            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
-        }
-        return appointments.stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<AppointmentResponseDto> getDoctorFinishedAppointments() throws AppointmentNotFoundException {
-        log.info("Searching finished appointment for doctorId -> {}", userService.getUsernameFromContext());
-        val doctor = userService.findByUsername(userService.getUsernameFromContext());
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(Status.DONE, userMapper.toEntity(doctor)))) {
-            log.error("No active appointment found for doctorId: -> {}", doctor);
-            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
-        }
-        return appointmentRepository.findByStatusAndDoctor(Status.DONE, userMapper.toEntity(doctor))
+        return appointmentRepository.findByPatient(userMapper.toEntity(patientDto), page)
                 .stream().map(appointmentMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AppointmentResponseDto> getDoctorFinishedAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
+        log.info("Searching finished appointment for doctor -> {}", userService.getUsernameFromContext());
+        val doctor = userService.findByUsername(userService.getUsernameFromContext());
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByStatusAndDoctor(Status.DONE, userMapper.toEntity(doctor), page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No appointments found...");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
@@ -309,43 +290,62 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getAllPendingAppointments() throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getAllPendingAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
         log.info("Searching for PENDING appointments:");
-        val appointments = appointmentRepository.findByStatus(Status.PENDING)
-                .stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(appointments)) {
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate"));
+
+        val appointmentsPage = appointmentRepository.findByStatus(Status.PENDING, page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
             log.error("No pending appointment found");
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        return appointments;
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AppointmentResponseDto> getDoctorCanceledAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
+        log.info("Searching appointment with status canceled for doctor -> {}", userService.getUsernameFromContext());
+        val doctor = userService.findByUsername(userService.getUsernameFromContext());
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByStatusCanceledAndDoctor(userMapper.toEntity(doctor), page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No appointment found with status canceled for doctor: -> {}", doctor);
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<AppointmentResponseDto> getAllFinishedAppointments(AppointmentSearchRequestDto requestDto) throws AppointmentNotFoundException {
         log.info("Searching for DONE appointments:");
-        Optional<AppointmentSearchRequestDto> requestExists = Optional.ofNullable(requestDto);
-        if (!requestExists.isPresent())
-            return appointmentRepository.findAll().stream().map(appointmentMapper::toResponseDto)
-                    .collect(Collectors.toList());
-        if (requestDto.getPageNumber() == null)
-            requestDto.setPageNumber(AppointmentConstants.DEFAULT_PAGE_NUMBER);
-        if (requestDto.getPageSize() == null)
-            requestDto.setPageSize(AppointmentConstants.DEFAULT_PAGE_SIZE);
+        AppointmentValidator.validateAppointmentSearchDto(requestDto);
 
-        PageRequest page = PageRequest.of(requestDto.getPageNumber() - 1, requestDto.getPageSize());
-        val appointments = appointmentRepository.findByStatus(Status.DONE, page);
+        PageRequest page = PageRequest.of(requestDto.getPageNumber() - 1, requestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
 
-        if (CollectionUtils.isEmpty(appointments.getContent())) {
+        val appointmentsPage = appointmentRepository.findByStatus(Status.DONE, page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
             log.error("No DONE appointment found");
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        return appointments.getContent().stream().map(appointmentMapper::toResponseDto)
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentResponseDto> getAllCanceledAppointments() throws AppointmentNotFoundException {
+    public List<AppointmentResponseDto> getAllCanceledAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
         log.info("Searching for CANCELED appointments:");
 
         List<Status> canceledStatuses = Arrays.stream(Status.values())
@@ -354,49 +354,53 @@ public class AppointmentServiceImpl implements AppointmentService {
                         status == Status.CANCELED_BY_SECRETARY)
                 .collect(Collectors.toList());
 
-        val appointments = appointmentRepository.findByStatusIn(canceledStatuses)
-                .stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(appointments)) {
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByStatusIn(canceledStatuses, page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
             log.error("No CANCELED appointment found");
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        return appointments;
-    }
-
-    @Override
-    public List<AppointmentResponseDto> getAllAppointmentsInSpecificDay(String date) throws AppointmentNotFoundException {
-        log.info("Retrieving all appointments in date -> {}", date);
-
-        LocalDate dateToSearch = DateUtil.validateDateFormat(date);
-        val appointments = appointmentRepository.findByAppointmentDate(dateToSearch);
-        if (CollectionUtils.isEmpty(appointments)) {
-            log.error("No appointment found");
-            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
-        }
-        return appointments.stream().map(appointmentMapper::toResponseDto)
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentResponseDto> getAllAppointmentsInSpecificDay(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
-        log.info("Retrieving appointments in specific day with search fields: -> {}", searchRequestDto);
+    public List<AppointmentResponseDto> getAllApprovedAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
+        log.info("Searching for Approved appointments:");
         AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
 
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByStatus(Status.APPROVED, page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No Approved appointment found");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AppointmentResponseDto> searchAppointmentWithSpecification(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
+        log.info("Retrieving appointments with search fields: -> {}, loggedIn user is-> {}", searchRequestDto, userService.getUsernameFromContext());
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
         Pageable pageRequest = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
-                Sort.by("startTime").ascending());
-        val pagesResponse = appointmentRepository.findAll(
+                Sort.by("appointmentDate").ascending());
+        val appointmentsPage = appointmentRepository.findAll(
                 appointmentSpecification.getAppointments(searchRequestDto), pageRequest);
 
-        if (pagesResponse != null && pagesResponse.getContent() != null) {
-            val appointmentsMatched = pagesResponse.getContent();
-            if (appointmentsMatched != null && appointmentsMatched.size() > 0) {
-                List<AppointmentResponseDto> responseDtos = appointmentsMatched.stream().map(appointmentMapper::toResponseDto)
-                        .collect(Collectors.toList());
-                return responseDtos;
-            }
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No Appointment found...");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -439,20 +443,26 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getDoctorActiveAppointments() throws AppointmentNotFoundException {
-        log.info("Searching finished appointment for doctorId -> {}", userService.getUsernameFromContext());
+    public List<AppointmentResponseDto> getDoctorActiveAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException {
+        log.info("Searching finished appointment for doctor -> {}", userService.getUsernameFromContext());
         val doctor = userService.findByUsername(userService.getUsernameFromContext());
-        if (CollectionUtils.isEmpty(appointmentRepository.findByStatusAndDoctor(Status.APPROVED, userMapper.toEntity(doctor)))) {
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByStatusAndDoctor(Status.APPROVED, userMapper.toEntity(doctor), page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
             log.error("No active appointment found for doctor: -> {}", doctor);
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
         }
-        return appointmentRepository.findByStatusAndDoctor(Status.APPROVED, userMapper.toEntity(doctor))
-                .stream().map(appointmentMapper::toResponseDto)
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentDto> getAppointmentByDate(LocalDate appointmentDate) {
+    public List<AppointmentDto> getAppointmentByDateAndNotCanceled(LocalDate appointmentDate) {
         log.info("Searching for appointment in date: -> {}", appointmentDate);
         return appointmentRepository.findByAppointmentDateAndNotCanceled(appointmentDate)
                 .stream().map(appointmentMapper::toDto)
@@ -467,12 +477,11 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.error("Cannot change doctor for this appointment as it is in status: -> {}", appointment.getStatus());
             throw new ReservationAppException(BadRequest.INVALID_STATUS.getMessage());
         }
-        val doctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
-        if (!doctorService.isDoctorAvailable(doctor, appointment.getStartTime(), appointment.getEndTime())) {
+        val newDoctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
+        if (!doctorService.isDoctorAvailable(newDoctor, appointment.getStartTime(), appointment.getEndTime())) {
             log.error("Doctor is not available in start time: -> {} and end: -> {}", appointment.getStartTime(), appointment.getEndTime());
             throw new ReservationAppException(BadRequest.DOCTOR_NOT_AVAILABLE.getMessage());
         }
-        val newDoctor = userService.findByIdAndRole(newAppointmentDto.getDoctor().getId(), Role.DOCTOR.name());
         appointment.setDoctor(userMapper.toEntity(newDoctor));
         appointment.setStatus(Status.DOCTOR_CHANGE_REQUEST);
         return appointmentMapper.toResponseDto(appointmentRepository.save(appointment));
@@ -489,7 +498,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new ReservationAppException(BadRequest.UNAUTHORIZED_OWNER.getMessage());
         }
         AppointmentValidator.validateAppointmentFeedback(existingAppointment, appointmentDto);
-
         appointmentMapper.updateAppointmentFromDto(appointmentDto, existingAppointment);
         return appointmentMapper.toResponseDto(appointmentRepository.save(existingAppointment));
     }
@@ -518,29 +526,39 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getPatientAllAppointments() {
-        val patientDto = userService.findByUsername(userService.getUsernameFromContext());
-        return appointmentRepository.findByPatient(userMapper.toEntity(patientDto))
-                .stream().map(appointmentMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<AppointmentResponseDto> getDoctorAllAppointments() {
+    public List<AppointmentResponseDto> getDoctorAllAppointments(AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving all doctor appointments for doctor -> {}", userService.getUsernameFromContext());
         val doctorDto = userService.findByUsername(userService.getUsernameFromContext());
-        return appointmentRepository.findByDoctor(userMapper.toEntity(doctorDto))
-                .stream().map(appointmentMapper::toResponseDto)
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() -1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
+
+        val appointmentsPage = appointmentRepository.findByDoctor(userMapper.toEntity(doctorDto), page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No appointment found!");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<AppointmentResponseDto> getAllAppointments(Integer pageNumber, Integer size) {
-        if (size == null || pageNumber == null)
-            throw new ReservationAppException(BadRequest.APPOINTMENT_SEARCH_FIELDS_MISSING.getMessage());
-        PageRequest pageRequest = PageRequest.of(pageNumber - 1, size,
+    public List<AppointmentResponseDto> getAllAppointments(AppointmentSearchRequestDto searchRequestDto) {
+        log.info("Retrieving all appointments...");
+
+        AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
                 Sort.by("appointmentDate").descending());
-        return appointmentRepository.findAll(pageRequest).getContent()
-                .stream().map(appointmentMapper::toResponseDto)
+
+        val appointmentsPage = appointmentRepository.findAll(page);
+
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())) {
+            log.error("No appointment found!");
+            throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
+        return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
 
@@ -549,12 +567,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         log.info("Search appointment with criteria -> {}", searchRequestDto);
         AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
 
-        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1,
-                searchRequestDto.getPageSize(), Sort.by("appointmentDate").descending());
+        PageRequest page = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
+                Sort.by("appointmentDate").descending());
         val appointmentsPage = appointmentRepository.findByStatus(searchRequestDto.getStatus(), page);
 
-        if (CollectionUtils.isEmpty(appointmentsPage.getContent()))
+        if (CollectionUtils.isEmpty(appointmentsPage.getContent())){
+            log.error("No appointment found..");
             throw new AppointmentNotFoundException(NotFound.APPOINTMENT.getMessage());
+        }
 
         return appointmentsPage.getContent().stream().map(appointmentMapper::toResponseDto)
                 .collect(Collectors.toList());

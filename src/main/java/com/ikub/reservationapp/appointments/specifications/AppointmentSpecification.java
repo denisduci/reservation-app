@@ -21,9 +21,16 @@ public class AppointmentSpecification {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            Join<AppointmentEntity, UserEntity> appointmentDoctorJoin = root.join("doctor");
+            if (request.getPatientName() != null) {
+                Join<AppointmentEntity, UserEntity> appointmentUserJoin = root.join("patient");
+                Predicate firstNameLike = criteriaBuilder.like(criteriaBuilder.lower(appointmentUserJoin.get("firstName")), "%" + request.getPatientName() + "%");
+                Predicate lastNameLike = criteriaBuilder.like(criteriaBuilder.lower(appointmentUserJoin.get("lastName")), "%" + request.getPatientName() + "%");
+                Predicate firstNameLikeOrLastNameLike = criteriaBuilder.or(firstNameLike, lastNameLike);
+                predicates.add(firstNameLikeOrLastNameLike);
+            }
 
             if (request.getDoctorName() != null) {
+                Join<AppointmentEntity, UserEntity> appointmentDoctorJoin = root.join("doctor");
                 Predicate firstNameLike = criteriaBuilder.like(criteriaBuilder.lower(appointmentDoctorJoin.get("firstName")),
                         "%" + request.getDoctorName() + "%");
                 Predicate lastNameLike = criteriaBuilder.like(criteriaBuilder.lower(appointmentDoctorJoin.get("lastName")),

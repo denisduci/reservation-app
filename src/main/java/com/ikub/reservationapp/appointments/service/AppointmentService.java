@@ -22,29 +22,25 @@ public interface AppointmentService {
 
     List<AppointmentResponseDto> getPatientCanceledAppointments() throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getDoctorCanceledAppointments() throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getDoctorCanceledAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
     List<AppointmentResponseDto> getPatientActiveAppointments() throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getDoctorActiveAppointments() throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getDoctorActiveAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
     List<AppointmentResponseDto> getPatientFinishedAppointments() throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getPatientAppointmentsInSpecificDay(String localDate) throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getDoctorFinishedAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getDoctorAppointmentsInSpecificDay (String localDate) throws AppointmentNotFoundException;
-
-    List<AppointmentResponseDto> getDoctorFinishedAppointments() throws AppointmentNotFoundException;
-
-    List<AppointmentResponseDto> getAllPendingAppointments() throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getAllPendingAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
     List<AppointmentResponseDto> getAllFinishedAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getAllCanceledAppointments() throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getAllCanceledAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getAllAppointmentsInSpecificDay(String date) throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> getAllApprovedAppointments(AppointmentSearchRequestDto searchRequestDto) throws AppointmentNotFoundException;
 
-    List<AppointmentResponseDto> getAllAppointmentsInSpecificDay(AppointmentSearchRequestDto date) throws AppointmentNotFoundException;
+    List<AppointmentResponseDto> searchAppointmentWithSpecification(AppointmentSearchRequestDto date) throws AppointmentNotFoundException;
 
     AppointmentResponseDto approveAppointment(Long appointmentId);
 
@@ -58,14 +54,19 @@ public interface AppointmentService {
 
     boolean isEligibleAppointmentToCancel(AppointmentEntity appointment);
 
-    List<AppointmentDto> getAppointmentByDate(LocalDate appointmentDate);
-    AppointmentResponseDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;
-    AppointmentResponseDto updateAppointmentFeedback(AppointmentDto appointmentDto);
-    AppointmentEntity getAppointmentById(Long id) throws AppointmentNotFoundException;
-    List<AppointmentResponseDto> getPatientAllAppointments();
+    List<AppointmentDto> getAppointmentByDateAndNotCanceled(LocalDate appointmentDate);
 
-    List<AppointmentResponseDto> getDoctorAllAppointments();
-    List<AppointmentResponseDto> getAllAppointments(Integer pageNumber, Integer size);
+    AppointmentResponseDto changeDoctor(AppointmentDto newAppointmentDto) throws ReservationAppException;
+
+    AppointmentResponseDto updateAppointmentFeedback(AppointmentDto appointmentDto);
+
+    AppointmentEntity getAppointmentById(Long id) throws AppointmentNotFoundException;
+
+    List<AppointmentResponseDto> getPatientAllAppointments(AppointmentSearchRequestDto searchRequestDto);
+
+    List<AppointmentResponseDto> getDoctorAllAppointments(AppointmentSearchRequestDto searchRequestDto);
+
+    List<AppointmentResponseDto> getAllAppointments(AppointmentSearchRequestDto searchRequestDto);
 
     List<AppointmentResponseDto> getAllAppointmentsWithStatusAndPagination(AppointmentSearchRequestDto searchRequestDto);
 }

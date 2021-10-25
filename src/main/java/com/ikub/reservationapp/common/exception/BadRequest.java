@@ -23,6 +23,7 @@ public enum BadRequest {
     APPOINTMENT_DATE_NOT_VALID("The date selected is not valid. Please reserve a coming date!"),
     SHORT_TIME_TO_CANCEL("Too short time to cancel Appointment!"),
     APPOINTMENT_SEARCH_FIELDS_MISSING("Search fields are missing!"),
+    PAGE_SIZE_NUMBER_MISSING("Page number and size are missing!"),
     USER_EXISTS("User with username already exists"),
     START_TIME_NOT_VALID("Start time must not be before the current time!"),
     END_TIME_NOT_VALID("End time must not be before start time!"),
