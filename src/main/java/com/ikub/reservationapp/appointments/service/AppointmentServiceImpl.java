@@ -16,9 +16,6 @@ import com.ikub.reservationapp.common.exception.BadRequest;
 import com.ikub.reservationapp.common.exception.NotFound;
 import com.ikub.reservationapp.doctors.service.DoctorService;
 import com.ikub.reservationapp.patients.service.PatientService;
-import com.ikub.reservationapp.users.dto.UserResponseDto;
-import com.ikub.reservationapp.users.entity.UserEntity;
-import com.ikub.reservationapp.users.exception.UserNotFoundException;
 import com.ikub.reservationapp.users.mapper.UserMapper;
 import com.ikub.reservationapp.users.service.RoleService;
 import com.ikub.reservationapp.users.service.UserService;
@@ -142,10 +139,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         val patientOfAppointment = appointment.getPatient();
         val doctorOfAppointment = appointment.getDoctor();
 
-        if (appointmentDto.getComments() == null || appointmentDto.getComments().trim().isEmpty()) {
-            log.error("Comment is missing for appointment to cancel");
-            throw new ReservationAppException(BadRequest.COMMENT_MISSING.getMessage());
-        }
+        AppointmentValidator.validateAppointmentForCancel(appointmentDto);
 
         if (isEligibleAppointmentToCancel(appointment)) {
             if (roleService.hasRole(Role.PATIENT.getRole())) {
@@ -391,7 +385,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         AppointmentValidator.validateAppointmentSearchDto(searchRequestDto);
         Pageable pageRequest = PageRequest.of(searchRequestDto.getPageNumber() - 1, searchRequestDto.getPageSize(),
-                Sort.by("appointmentDate").ascending());
+                Sort.by("appointmentDate").descending());
         val appointmentsPage = appointmentRepository.findAll(
                 appointmentSpecification.getAppointments(searchRequestDto), pageRequest);
 
@@ -412,6 +406,41 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         appointment.setStatus(Status.APPROVED);
         return appointmentMapper.toResponseDto(appointmentRepository.save(appointment));
+    }
+
+    @Override
+    public AppointmentResponseDto suggestTime(Long id, AppointmentDto suggestedAppointment) {
+        log.info("Suggesting new time for appointment id -> {}", id);
+        val appointment = getAppointmentById(id);
+
+        AppointmentValidator.validateAppointment(suggestedAppointment);
+
+        if (appointment.getStatus() != Status.PENDING)
+            throw new ReservationAppException(BadRequest.INVALID_STATUS.name());
+
+        val startTime = appointment.getStartTime().getHour();
+        val endTime = appointment.getEndTime().getHour();
+
+        if (endTime - startTime != suggestedAppointment.getEndTime().getHour() - suggestedAppointment.getStartTime().getHour())
+            throw new ReservationAppException("Please suggested the same hours as requested!");
+
+        val patient = userService.findByIdAndRole(suggestedAppointment.getPatient().getId(), Role.PATIENT.name());
+        if (appointment.getPatient().getUsername() != patient.getUsername())
+            throw new ReservationAppException("Please choose the patient that this appointment belongs!");
+        suggestedAppointment.setPatient(patient);
+
+        val doctor = userService.findByIdAndRole(suggestedAppointment.getDoctor().getId(), Role.DOCTOR.name());
+        if (appointment.getDoctor().getUsername() != doctor.getUsername())
+            throw new ReservationAppException("Please choose the doctor that this appointment belongs!");
+        suggestedAppointment.setDoctor(doctor);
+
+        if (patientService.hasAppointment(suggestedAppointment, patient))
+            throw new ReservationAppException("Patient already has an appointment in this time!");
+
+        if (!doctorService.isDoctorAvailable(doctor, suggestedAppointment.getStartTime(), suggestedAppointment.getEndTime()))
+            throw new ReservationAppException("Doctor not available!");
+
+        return appointmentMapper.dtoToResponseDto(suggestedAppointment);
     }
 
     @Override

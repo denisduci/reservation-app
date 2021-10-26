@@ -4,6 +4,7 @@ import com.ikub.reservationapp.appointments.dto.AppointmentDto;
 import com.ikub.reservationapp.appointments.entity.AppointmentEntity;
 import com.ikub.reservationapp.appointments.repository.AppointmentRepository;
 import com.ikub.reservationapp.appointments.utils.DateUtil;
+import com.ikub.reservationapp.common.enums.Status;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.patients.repository.PatientRepository;
 import com.ikub.reservationapp.users.dto.UserDto;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,7 +47,13 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public boolean hasAppointment(AppointmentDto appointmentDto, UserDto patient) {
-        val patientAppointments = appointmentRepository.findByAppointmentDateAndPatient(appointmentDto.getAppointmentDate(), userMapper.toEntity(patient));
+
+        List<Status> eligibleStatuses = Arrays.stream(Status.values()).filter(status -> status.equals(Status.PENDING) ||
+                status.equals(Status.APPROVED) || status.equals(Status.DOCTOR_CHANGE_REQUEST) || status.equals(Status.DOCTOR_CHANGE_APPROVED))
+                .collect(Collectors.toList());
+
+        val patientAppointments = appointmentRepository.findByAppointmentDateAndPatientAndStatusIn(appointmentDto.getAppointmentDate(),
+                userMapper.toEntity(patient), eligibleStatuses);
 
         List<AppointmentEntity> overlappingAppointments = patientAppointments.stream().filter(appointmentEntity ->
                 DateUtil.isOverlapping(appointmentDto.getStartTime(), appointmentDto.getEndTime(),

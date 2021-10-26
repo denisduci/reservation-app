@@ -40,4 +40,13 @@ public interface AppointmentMapper {
             @Mapping(target = "patientName", expression = "java(appointmentEntity.getPatient().getFirstName() + \" \" + appointmentEntity.getPatient().getLastName())")
     })
     AppointmentResponseDto toResponseDto(AppointmentEntity appointmentEntity);
+
+    @Mappings({
+            @Mapping(source = "appointmentDate", target = "appointmentDate"),
+            @Mapping(source = "startTime", target = "startTime"),
+            @Mapping(source = "endTime", target = "endTime"),
+            @Mapping(target = "doctorName", expression = "java(appointmentDto.getDoctor().getFirstName() + \" \" + appointmentDto.getDoctor().getLastName())"),
+            @Mapping(target = "patientName", expression = "java(appointmentDto.getPatient().getFirstName() + \" \" + appointmentDto.getPatient().getLastName())")
+    })
+    AppointmentResponseDto dtoToResponseDto(AppointmentDto appointmentDto);
 }

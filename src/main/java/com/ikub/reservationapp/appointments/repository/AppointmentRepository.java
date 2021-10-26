@@ -30,7 +30,7 @@ public interface AppointmentRepository extends CrudRepository<AppointmentEntity,
                                                      @Param("appointmentStartTime") LocalDateTime appointmentStartTime,
                                                      @Param("appointmentEndTime") LocalDateTime appointmentEndTime);
 
-    List<AppointmentEntity> findByAppointmentDateAndPatient(LocalDate date, UserEntity patient);
+    List<AppointmentEntity> findByAppointmentDateAndPatientAndStatusIn(LocalDate date, UserEntity patient, List<Status> statuses);
 
     @Query("SELECT a FROM AppointmentEntity a WHERE a.patient=:patientId AND a.status IN (3,4,5)")
     List<AppointmentEntity> findByStatusCanceledAndPatient(@Param(("patientId")) UserEntity patientId);

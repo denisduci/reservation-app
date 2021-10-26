@@ -50,6 +50,8 @@ public interface AppointmentService {
 
     AppointmentResponseDto updateAppointment(AppointmentDto appointmentDto);
 
+    AppointmentResponseDto suggestTime(Long id, AppointmentDto suggestedAppointment);
+
     String updateDefaultFeedback();
 
     boolean isEligibleAppointmentToCancel(AppointmentEntity appointment);

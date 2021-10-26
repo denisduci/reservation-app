@@ -72,12 +72,23 @@ public final class AppointmentValidator {
             throw new ReservationAppException(BadRequest.APPOINTMENT_FEEDBACK_EXISTS.getMessage());
         }
         if (appointmentDto.getFeedback().length() > 200) {
-            log.error("Appointment feedback is too long length is -> {}", appointmentDto.getFeedback().length());
+            log.error("Appointment feedback is too long -> {}", appointmentDto.getFeedback().length());
             throw new ReservationAppException(BadRequest.APPOINTMENT_FEEDBACK_LONG.getMessage());
         }
         if (existingAppointment.getStatus() != Status.APPROVED) {
             log.error("Invalid appointment status for updating the feedback: -> {}", existingAppointment.getStatus());
             throw new ReservationAppException(BadRequest.INVALID_STATUS.getMessage());
+        }
+    }
+
+    public static void validateAppointmentForCancel(AppointmentDto appointmentDto) {
+        if (appointmentDto.getComments() == null || appointmentDto.getComments().trim().isEmpty()) {
+            log.error("Comment is missing for appointment to cancel");
+            throw new ReservationAppException(BadRequest.COMMENT_MISSING.getMessage());
+        }
+        if (appointmentDto.getComments().length() > 100) {
+            log.error("Comments is too long!");
+            throw new ReservationAppException(BadRequest.APPOINTMENT_COMMENT_LONG.name());
         }
     }
 

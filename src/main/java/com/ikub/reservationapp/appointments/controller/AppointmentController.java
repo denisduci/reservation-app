@@ -163,6 +163,20 @@ public class AppointmentController {
     }
 
     /**
+     *
+     * @param currentAppointment based on which the suggestion will happen
+     * @param suggestedAppointment suggested appointment
+     * @return
+     * @throws ReservationAppException
+     */
+    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @GetMapping("/suggest/{id}")
+    public ResponseEntity<AppointmentResponseDto> suggestTime(@PathVariable("id") Long currentAppointment, @RequestBody AppointmentDto suggestedAppointment) throws ReservationAppException {
+        log.info("Suggesting new appointment...");
+        return new ResponseEntity<>(appointmentService.suggestTime(currentAppointment, suggestedAppointment), HttpStatus.OK);
+    }
+
+    /**
      * @return Appointment DONE
      */
     @PreAuthorize("hasRole('ROLE_SECRETARY')")
@@ -302,7 +316,7 @@ public class AppointmentController {
      * @param searchRequestDto date, doctorName, patientName, pageNumber, pageSize
      * @return
      */
-    @PreAuthorize("hasRole('ROLE_SECRETARY')")
+    @PreAuthorize("hasAnyRole('ROLE_SECRETARY', 'ROLE_DOCTOR')")
     @GetMapping("/specification")
     public ResponseEntity<List<AppointmentResponseDto>> searchAppointmentWithSpecification(@RequestBody AppointmentSearchRequestDto searchRequestDto) {
         log.info("Retrieving appointments with specification...");

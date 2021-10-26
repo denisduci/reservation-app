@@ -14,6 +14,7 @@ public enum BadRequest {
     APPOINTMENT_TIME_MISSING("Appointment time is missing!"),
     APPOINTMENT_FEEDBACK_EXISTS("Appointment feedback already exists!"),
     APPOINTMENT_FEEDBACK_LONG("Appointment feedback is too long!"),
+    APPOINTMENT_COMMENT_LONG("Appointment comment is too long!"),
     DOCTOR_MISSING("Doctor missing!"),
     COMMENT_MISSING("Comment is missing for Appointment!"),
     DOCTOR_NOT_AVAILABLE("Doctor is not available in this time!"),

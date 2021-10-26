@@ -62,8 +62,6 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     @Autowired
     private TokenProvider jwtTokenUtil;
     @Autowired
-    private PasswordValidationUtil passwordValidation;
-    @Autowired
     private UserSpecification userSpecification;
 
     public UserDetails loadUserByUsername(String username) {
@@ -106,12 +104,12 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         });
 
         //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
-        if (!passwordValidation.isValid(userDto.getPassword())) {
+        if (!PasswordValidationUtil.isValid(userDto.getPassword())) {
             throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_SECURITY_FAIL.getMessage()));
         }
 
         //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
-        if (!passwordValidation.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
+        if (!PasswordValidationUtil.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
             throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_MATCH_FAIL.getMessage()));
         }
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
