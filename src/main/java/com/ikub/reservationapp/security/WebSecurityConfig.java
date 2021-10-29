@@ -1,9 +1,11 @@
 package com.ikub.reservationapp.security;
 
+import com.ikub.reservationapp.security.database.DbAuthenticationProvider;
+import com.ikub.reservationapp.security.ldap.LdapAuthenticationProvider;
+import com.ikub.reservationapp.security.ldap.LdapUserAuthoritiesPopulator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,17 +28,27 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Resource(name = "userService")
     private UserDetailsService userDetailsService;
-
+    @Resource(name = "ldapAuthenticationProvider")
+    private LdapAuthenticationProvider ldapAuthenticationProvider;
+    @Autowired
+    private DbAuthenticationProvider dbAuthenticationProvider;
     @Autowired
     private UnauthorizedEntryPoint unauthorizedEntryPoint;
-    //1-AuthenticationManager takes AuthenticationManagerBuilder which will use userDetailsService to search a user.
-
     @Autowired
     private JwtAccessDeniedHandler accessDeniedHandler;
+    @Autowired
+    private LdapUserAuthoritiesPopulator ldapUserAuthoritiesPopulator;
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(encoder());
+//        auth.ldapAuthentication()
+//                .userDnPatterns("uid={0},ou=people")
+//                .groupSearchBase("ou=groups")
+//                .contextSource().url("ldap://localhost:8389/dc=springframework,dc=org").and()
+//                .passwordCompare().passwordEncoder(customPasswordEncoder())
+//                .passwordAttribute("userPassword");
+        auth.authenticationProvider(ldapAuthenticationProvider);
+        auth.authenticationProvider(dbAuthenticationProvider).userDetailsService(userDetailsService).passwordEncoder(encoder());
     }
 
     @Override

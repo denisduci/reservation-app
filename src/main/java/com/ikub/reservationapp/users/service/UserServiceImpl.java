@@ -9,6 +9,8 @@ import com.ikub.reservationapp.common.exception.PasswordNotValidException;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import com.ikub.reservationapp.common.model.AuthToken;
 import com.ikub.reservationapp.security.TokenProvider;
+import com.ikub.reservationapp.security.database.DbAuthenticationProvider;
+import com.ikub.reservationapp.security.ldap.LdapAuthenticationProvider;
 import com.ikub.reservationapp.users.constants.Constants;
 import com.ikub.reservationapp.users.dto.UserDto;
 import com.ikub.reservationapp.users.dto.UserResponseDto;
@@ -23,24 +25,37 @@ import com.ikub.reservationapp.users.repository.UserRepository;
 import com.ikub.reservationapp.users.dto.UserSearchRequestDto;
 import com.ikub.reservationapp.users.specifications.UserSpecification;
 import com.ikub.reservationapp.users.validators.PasswordValidationUtil;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.ldap.core.DirContextOperations;
+import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.ldap.filter.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.ldap.SpringSecurityLdapTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.naming.directory.Attribute;
 import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
@@ -63,6 +78,10 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     private TokenProvider jwtTokenUtil;
     @Autowired
     private UserSpecification userSpecification;
+    @Autowired
+    private DbAuthenticationProvider dbAuthenticationProvider;
+    @Autowired
+    private LdapAuthenticationProvider ldapAuthenticationProvider;
 
     public UserDetails loadUserByUsername(String username) {
         UserEntity user = userMapper.toEntity(findByUsername(username));
@@ -81,13 +100,18 @@ public class UserServiceImpl implements UserDetailsService, UserService {
 
     @Override
     public AuthToken authenticate(LoginUser loginUser) throws AuthenticationException {
-        final Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginUser.getUsername(),
-                        loginUser.getPassword()
-                ));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return jwtTokenUtil.generateTokenWithAuthentication(authentication);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                loginUser.getUsername(),
+                loginUser.getPassword()
+        );
+        Authentication ldapAuthentication = ldapAuthenticationProvider.authenticate(authenticationToken);
+        if (ldapAuthentication != null)
+            return jwtTokenUtil.generateTokenWithAuthentication(ldapAuthentication);
+        Authentication dbAuthentication = dbAuthenticationProvider.authenticate(authenticationToken);
+        if (dbAuthentication != null) {
+            return jwtTokenUtil.generateTokenWithAuthentication(dbAuthentication);
+        }
+        throw new BadCredentialsException("Unauthenticated");
     }
 
     @Override
@@ -103,12 +127,7 @@ public class UserServiceImpl implements UserDetailsService, UserService {
             throw new ReservationAppException(BadRequest.USER_EXISTS.getMessage());
         });
 
-        //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
-        if (!PasswordValidationUtil.isValid(userDto.getPassword())) {
-            throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_SECURITY_FAIL.getMessage()));
-        }
-
-        //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
+        //2 - CHECK PASSWORD MATCH | THROW EXCEPTION
         if (!PasswordValidationUtil.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
             throw new PasswordNotValidException(Arrays.asList(BadRequest.PASSWORD_MATCH_FAIL.getMessage()));
         }
@@ -180,6 +199,13 @@ public class UserServiceImpl implements UserDetailsService, UserService {
     }
 
     @Override
+    public List<UserResponseDto> getAllUsersWithoutPagination() {
+        return userRepository.findAll().stream().map(
+                userMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<UserResponseDto> getUserList(UserSearchRequestDto userRequest) {
         List<UserEntity> usersMatched;
         Page<UserEntity> pages;
@@ -202,4 +228,5 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         }
         throw new UserNotFoundException(NotFound.USER.getMessage());
     }
+
 }

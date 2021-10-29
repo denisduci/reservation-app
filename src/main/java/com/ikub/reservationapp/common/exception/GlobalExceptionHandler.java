@@ -29,6 +29,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity(new ExceptionMessage("Bad Credentials", Collections.singletonList(ex.getMessage())), HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(value = ReservationApp500Exception.class)
+    public ResponseEntity handle500Exception(ReservationApp500Exception reservationApp500Exception) {
+        return new ResponseEntity(reservationApp500Exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @ExceptionHandler(value = UserNotFoundException.class)
     public ResponseEntity userNotFoundException(UserNotFoundException userNotFoundException) {
         return new ResponseEntity(userNotFoundException.getMessage(), HttpStatus.NOT_FOUND);

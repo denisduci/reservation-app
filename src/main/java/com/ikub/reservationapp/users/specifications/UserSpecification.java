@@ -1,6 +1,5 @@
 package com.ikub.reservationapp.users.specifications;
 
-import com.ikub.reservationapp.appointments.utils.DateUtil;
 import com.ikub.reservationapp.users.dto.UserSearchRequestDto;
 import com.ikub.reservationapp.users.entity.RoleEntity;
 import com.ikub.reservationapp.users.entity.UserEntity;

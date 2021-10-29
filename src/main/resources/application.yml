@@ -15,6 +15,14 @@ spring:
     restart:
       enabled: true
 
+  ldap:
+    embedded:
+      port: 8389
+      ldif: classpath:ldap-data.ldif
+      base-dn: dc=springframework,dc=org
+      validation:
+        enabled: false
+
 jwt:
   token:
     refresh:

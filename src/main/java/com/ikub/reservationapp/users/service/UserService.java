@@ -25,6 +25,6 @@ public interface UserService {
     UserDto findByUsername(String username) throws UserNotFoundException;
 
     String getUsernameFromContext();
-
+    List<UserResponseDto> getAllUsersWithoutPagination();
     List<UserResponseDto> getUserList(UserSearchRequestDto userRequest);
 }

@@ -1,0 +1,177 @@
+dn: dc=springframework,dc=org
+objectclass: top
+objectclass: domain
+objectclass: extensibleObject
+dc: springframework
+
+dn: ou=groups,dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: groups
+
+dn: ou=subgroups,ou=groups,dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: subgroups
+
+dn: ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: people
+
+dn: ou=space cadets,dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: space cadets
+
+dn: ou=\"quoted people\",dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: "quoted people"
+
+dn: ou=otherpeople,dc=springframework,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: otherpeople
+
+dn: uid=ben,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Ben
+sn: Alex
+uid: ben
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: ben@mail.com
+phone: 123123123123
+
+dn: uid=admin,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: ADMIN
+sn: ADMIN
+uid: admin
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: ADMIN
+email: admin@mail.com
+phone: 1111111111
+
+dn: uid=secretary,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Secretary
+sn: Secretary
+uid: secretary
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: SECRETARY,ADMIN
+email: secretary@mail.com
+phone: 1111111111
+
+dn: uid=bob,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Bob
+sn: Hamilton
+uid: bob
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: bob@mail.com
+phone: 1234142142
+
+dn: uid=joe,ou=otherpeople,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Joe
+sn: Smeth
+uid: joe
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: joe@mail.com
+phone: 057975585
+
+dn: cn=mouse\, jerry,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Mouse
+sn: Mouse
+uid: jerry
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: mouse@mail.com
+phone: 934783242
+
+dn: cn=slash/guy,ou=people,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: slash
+sn: Slash
+uid: slashguy
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: slash@gmail.com
+phone: 2314234234
+
+dn: cn=quote\"guy,ou=\"quoted people\",dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: quote
+sn: Quote
+uid: quoteguy
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: quoteguy@gmail.com
+phone: 121212121
+
+dn: uid=space cadet,ou=space cadets,dc=springframework,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Space
+sn: Cadet
+uid: space cadet
+userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+roles: PATIENT
+email: space@mail.com
+phone: 1959735757
+
+
+
+dn: cn=developers,ou=groups,dc=springframework,dc=org
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: developers
+ou: developer
+uniqueMember: uid=ben,ou=people,dc=springframework,dc=org
+uniqueMember: uid=bob,ou=people,dc=springframework,dc=org
+
+dn: cn=managers,ou=groups,dc=springframework,dc=org
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: managers
+ou: manager
+uniqueMember: uid=ben,ou=people,dc=springframework,dc=org
+uniqueMember: cn=mouse\, jerry,ou=people,dc=springframework,dc=org
+
+dn: cn=submanagers,ou=subgroups,ou=groups,dc=springframework,dc=org
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: submanagers
+ou: submanager
+uniqueMember: uid=ben,ou=people,dc=springframework,dc=org

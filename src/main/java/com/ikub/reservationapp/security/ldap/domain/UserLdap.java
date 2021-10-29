@@ -1,24 +1,16 @@
-package com.ikub.reservationapp.users.dto;
+package com.ikub.reservationapp.security.ldap.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ikub.reservationapp.common.enums.Role;
-import com.ikub.reservationapp.users.entity.RoleEntity;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
+
 import javax.validation.constraints.*;
-import java.util.Set;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
-
-    private Long id;
-
+public class UserLdap {
     @NotBlank(message = "First name must not be empty")
     private String firstName;
 
@@ -35,10 +27,6 @@ public class UserDto {
             message = "Password doesn't meet security!")
     private String password;
 
-    @NotBlank(message = "Confirm Password must not be empty")
-//    /@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String confirmPassword;
-
     @Email
     @NotEmpty(message = "Email must not be empty")
     private String email;
@@ -49,6 +37,5 @@ public class UserDto {
     @Pattern(regexp = "(^$|[0-9]{10})", message = "Must be number with 10 digits")
     private String phone;
 
-    private Set<RoleDto> roles;
-
+    private String roles;
 }

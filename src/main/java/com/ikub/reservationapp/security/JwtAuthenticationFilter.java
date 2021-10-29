@@ -1,5 +1,6 @@
 package com.ikub.reservationapp.security;
 
+import com.ikub.reservationapp.security.ldap.service.LdapAuthenticationService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private TokenProvider tokenProvider;
+    @Resource(name = "ldapAuthService")
+    private LdapAuthenticationService ldapAuthenticationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -54,16 +57,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            UserDetails userDetailsFromLdap = ldapAuthenticationService.loadUserDetailsFromLdap(username);
 
-            if (tokenProvider.validateToken(authToken, userDetails)) {
-                UsernamePasswordAuthenticationToken authentication = tokenProvider.getAuthenticationToken(authToken, SecurityContextHolder.getContext().getAuthentication(), userDetails);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                logger.info("authenticated user " + username + ", setting security context");
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (userDetailsFromLdap != null)
+                validateTokenAndSetAuthentication(authToken, userDetailsFromLdap, request);
+            else {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                validateTokenAndSetAuthentication(authToken, userDetails, request);
             }
         }
-
         chain.doFilter(request, response);
+    }
+
+    protected void validateTokenAndSetAuthentication(String token, UserDetails userDetails, HttpServletRequest request) {
+        if (tokenProvider.validateToken(token, userDetails)) {
+            UsernamePasswordAuthenticationToken authentication = tokenProvider.getAuthenticationToken(token, SecurityContextHolder.getContext().getAuthentication(), userDetails);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            logger.info("Authenticated user " + userDetails.getUsername() + ", setting security context");
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
     }
 }

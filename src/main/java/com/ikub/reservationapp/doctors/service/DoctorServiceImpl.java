@@ -31,8 +31,6 @@ public class DoctorServiceImpl implements DoctorService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private PasswordValidationUtil passwordValidation;
-    @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Autowired
     private RoleService roleService;
@@ -65,12 +63,8 @@ public class DoctorServiceImpl implements DoctorService {
                 .ifPresent(user -> {
                     throw new ReservationAppException("User with username already exists!");
                 });
-        //2 - CHECK PASSWORD VALIDATION | THROW EXCEPTION
-        if (!passwordValidation.isValid(userDto.getPassword())) {
-            throw new PasswordNotValidException(Arrays.asList("Password doesn't meet security!"));
-        }
-        //3 - CHECK PASSWORD MATCH | THROW EXCEPTION
-        if (!passwordValidation.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
+        //2 - CHECK PASSWORD MATCH | THROW EXCEPTION
+        if (!PasswordValidationUtil.isPasswordMatch(userDto.getPassword(), userDto.getConfirmPassword())) {
             throw new PasswordNotValidException(Arrays.asList("Passwords do not match!"));
         }
         userEntity.setPassword(bCryptPasswordEncoder.encode(userDto.getPassword()));
