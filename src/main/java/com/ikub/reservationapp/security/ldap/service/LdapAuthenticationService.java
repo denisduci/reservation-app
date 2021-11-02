@@ -3,7 +3,6 @@ package com.ikub.reservationapp.security.ldap.service;
 import com.ikub.reservationapp.security.ldap.domain.UserLdap;
 import com.ikub.reservationapp.security.ldap.dto.UserLdapResponseDto;
 import com.ikub.reservationapp.security.ldap.dto.UserMergedResponseDto;
-import org.apache.catalina.LifecycleState;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -19,5 +18,4 @@ public interface LdapAuthenticationService {
     List<UserLdapResponseDto> getAllLdapUsers();
     List<String> search(String username);
     List<UserMergedResponseDto> getMergedUsers();
-
 }

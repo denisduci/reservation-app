@@ -31,10 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Resource(name = "userService")
     private UserDetailsService userDetailsService;
 
-    @Autowired
-    private TokenProvider tokenProvider;
     @Resource(name = "ldapAuthService")
     private LdapAuthenticationService ldapAuthenticationService;
+
+    @Autowired
+    private TokenProvider tokenProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {

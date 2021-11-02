@@ -187,6 +187,7 @@ public class TokenProvider implements Serializable {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
+        //return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
+        return new UsernamePasswordAuthenticationToken(userDetails,userDetails.getPassword(),authorities);
     }
 }

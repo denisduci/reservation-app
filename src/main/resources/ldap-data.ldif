@@ -42,7 +42,7 @@ objectclass: inetOrgPerson
 cn: Ben
 sn: Alex
 uid: ben
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: ben@mail.com
 phone: 123123123123
@@ -55,7 +55,7 @@ objectclass: inetOrgPerson
 cn: ADMIN
 sn: ADMIN
 uid: admin
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: ADMIN
 email: admin@mail.com
 phone: 1111111111
@@ -68,7 +68,7 @@ objectclass: inetOrgPerson
 cn: Secretary
 sn: Secretary
 uid: secretary
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: SECRETARY,ADMIN
 email: secretary@mail.com
 phone: 1111111111
@@ -81,7 +81,7 @@ objectclass: inetOrgPerson
 cn: Bob
 sn: Hamilton
 uid: bob
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: bob@mail.com
 phone: 1234142142
@@ -94,7 +94,7 @@ objectclass: inetOrgPerson
 cn: Joe
 sn: Smeth
 uid: joe
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: joe@mail.com
 phone: 057975585
@@ -107,7 +107,7 @@ objectclass: inetOrgPerson
 cn: Mouse
 sn: Mouse
 uid: jerry
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: mouse@mail.com
 phone: 934783242
@@ -120,7 +120,7 @@ objectclass: inetOrgPerson
 cn: slash
 sn: Slash
 uid: slashguy
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: slash@gmail.com
 phone: 2314234234
@@ -133,7 +133,7 @@ objectclass: inetOrgPerson
 cn: quote
 sn: Quote
 uid: quoteguy
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: quoteguy@gmail.com
 phone: 121212121
@@ -146,7 +146,7 @@ objectclass: inetOrgPerson
 cn: Space
 sn: Cadet
 uid: space cadet
-userPassword: $2a$12$2O0gxW3ssM6/jJHyzMZZweR4pCKUHNwjCcsiqBqk/Vcc9cWILoR7C
+userPassword: {SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=
 roles: PATIENT
 email: space@mail.com
 phone: 1959735757

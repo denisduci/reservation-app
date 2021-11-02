@@ -3,7 +3,6 @@ package com.ikub.reservationapp.security.ldap.service;
 import com.ikub.reservationapp.common.exception.BadRequest;
 import com.ikub.reservationapp.common.exception.ReservationApp500Exception;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
-import com.ikub.reservationapp.security.ldap.config.LdapPasswordEncoder;
 import com.ikub.reservationapp.security.ldap.domain.UserLdap;
 import com.ikub.reservationapp.security.ldap.dto.UserLdapResponseDto;
 import com.ikub.reservationapp.security.ldap.dto.UserMergedResponseDto;
@@ -16,9 +15,10 @@ import org.springframework.ldap.NameNotFoundException;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.SpringSecurityLdapTemplate;
+import org.springframework.security.ldap.userdetails.*;
 import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.naming.Name;
@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import static org.springframework.ldap.query.LdapQueryBuilder.query;
 
 @Slf4j
@@ -43,21 +44,20 @@ public class LdapAuthenticationServiceImpl implements LdapAuthenticationService 
     private SpringSecurityLdapTemplate securityLdapTemplate;
     @Autowired
     private LdapUserMapper ldapUserMapper;
-    @Autowired
-    private LdapPasswordEncoder ldapPasswordEncoder;
+    @Resource(name = "ldap")
+    private PasswordEncoder ldapPasswordEncoder;
 
     @Override
     public UserDetails loadUserDetailsFromLdap(String username) {
-        String userPasswordFromLdap;
         String rolesAsStringFromLdap;
-        UserLdap userFromLdap = getUserByUsername(username);
-        if (userFromLdap != null) {
-            userPasswordFromLdap = userFromLdap.getPassword();
-            rolesAsStringFromLdap = userFromLdap.getRoles();
-            val userAuthoritiesFromLdap = getGrantedAuthoritiesFromLdap(rolesAsStringFromLdap);
-            UserDetails userDetails = new User(username, userPasswordFromLdap, userAuthoritiesFromLdap);
-            log.info("User details are -> {}", userDetails);
-            return userDetails;
+        val userData = securityLdapTemplate.retrieveEntry("uid=" + username + ",ou=people", null);
+        if (userData != null) {
+            rolesAsStringFromLdap = userData.getStringAttribute("roles");
+            UserDetailsContextMapper userDetailsMapper = new LdapUserDetailsMapper();
+            val ldapUserDetails = userDetailsMapper.mapUserFromContext(userData, username,
+                    getGrantedAuthoritiesFromLdap(rolesAsStringFromLdap));
+            log.info("LDAP User Details are: -> {}", ldapUserDetails);
+            return ldapUserDetails;
         }
         log.warn("No user details found...");
         return null;
@@ -85,10 +85,12 @@ public class LdapAuthenticationServiceImpl implements LdapAuthenticationService 
         });
         try {
             securityLdapTemplate.bind(dn, null, buildAttributes(userLdap));
+
         } catch (Exception e) {
             log.error("Error while saving user to ldap: -> {}", e);
             throw new ReservationApp500Exception("Error while saving user to ldap");
         }
+        userLdap.setRoles("PATIENT");
         return ldapUserMapper.toResponseLdapUser(userLdap);
     }
 

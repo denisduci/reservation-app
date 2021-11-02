@@ -2,10 +2,11 @@ package com.ikub.reservationapp.security;
 
 import com.ikub.reservationapp.security.database.DbAuthenticationProvider;
 import com.ikub.reservationapp.security.ldap.LdapAuthenticationProvider;
-import com.ikub.reservationapp.security.ldap.LdapUserAuthoritiesPopulator;
+import com.ikub.reservationapp.security.ldap.encoder.LdapCustomPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.ldap.SpringSecurityLdapTemplate;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,19 +38,50 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private UnauthorizedEntryPoint unauthorizedEntryPoint;
     @Autowired
     private JwtAccessDeniedHandler accessDeniedHandler;
-    @Autowired
-    private LdapUserAuthoritiesPopulator ldapUserAuthoritiesPopulator;
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
 //        auth.ldapAuthentication()
 //                .userDnPatterns("uid={0},ou=people")
-//                .groupSearchBase("ou=groups")
-//                .contextSource().url("ldap://localhost:8389/dc=springframework,dc=org").and()
-//                .passwordCompare().passwordEncoder(customPasswordEncoder())
+//                //.groupSearchBase("ou=groups")
+//               .contextSource().url("ldap://localhost:8389/dc=springframework,dc=org").and()
+//                .passwordCompare().passwordEncoder(encoder())
 //                .passwordAttribute("userPassword");
-        auth.authenticationProvider(ldapAuthenticationProvider);
+
+        auth.authenticationProvider(ldapAuthenticationProvider)
+                .ldapAuthentication().userDnPatterns("uid={0},ou=people")
+                .contextSource(contextSource()).passwordCompare().passwordEncoder(passwordEncoder()).passwordAttribute("userPassword");
         auth.authenticationProvider(dbAuthenticationProvider).userDetailsService(userDetailsService).passwordEncoder(encoder());
+    }
+
+    @Bean
+    public LdapContextSource contextSource() {
+        LdapContextSource contextSource = new LdapContextSource();
+        contextSource.setUrl("ldap://localhost:8389");
+        //contextSource.setAnonymousReadOnly(true);
+        //contextSource.setBase("ou=groups");
+        contextSource.setBase("dc=springframework,dc=org");
+        contextSource.setUserDn("uid=admin,ou=people,dc=springframework,dc=org");
+        contextSource.setPassword("{SHA}JuZjIoqmb7oTqegY1eP5W+EF9GU=");
+        contextSource.afterPropertiesSet();
+        return contextSource;
+    }
+
+//    @Bean
+//    public PasswordEncoder encoderGlobal() {
+//        String encodingId = "bcrypt";
+//        Map<String, PasswordEncoder> encoders = new HashMap<>();
+//        encoders.put(encodingId, new BCryptPasswordEncoder());
+//        encoders.put("custom", new LdapCustomPasswordEncoder());
+//        DelegatingPasswordEncoder delegatingPasswordEncoder = new DelegatingPasswordEncoder(encodingId,encoders);
+//        //delegatingPasswordEncoder.setDefaultPasswordEncoderForMatches(new BCryptPasswordEncoder());
+//        delegatingPasswordEncoder.setDefaultPasswordEncoderForMatches(new LdapCustomPasswordEncoder());
+//        return delegatingPasswordEncoder;
+//    }
+
+    @Bean
+    public SpringSecurityLdapTemplate ldapTemplate() {
+        return new SpringSecurityLdapTemplate(contextSource());
     }
 
     @Override
@@ -75,9 +108,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 "/webjars/**");
     }
 
-    @Bean
+    @Bean(value = "bcrypt")
     public BCryptPasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean(value = "ldap")
+    public LdapCustomPasswordEncoder passwordEncoder() {
+        return new LdapCustomPasswordEncoder();
     }
 
     @Bean

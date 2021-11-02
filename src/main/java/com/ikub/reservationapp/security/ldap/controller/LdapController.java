@@ -23,7 +23,7 @@ public class LdapController {
     @Resource(name = "ldapAuthService")
     private LdapAuthenticationService ldapAuthenticationService;
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<UserLdapResponseDto> createLdapUser(@Valid @RequestBody UserLdap userLdap) throws ReservationAppException {
         log.info("Creating an ldap user...");
@@ -42,5 +42,12 @@ public class LdapController {
     public ResponseEntity<List<UserMergedResponseDto>> getMergedUsers()  {
         log.info("Retrieving merged users of application...");
         return new ResponseEntity<>(ldapAuthenticationService.getMergedUsers(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/username")
+    public ResponseEntity<UserLdap> getByUsername()  {
+        log.info("Retrieving merged users of application...");
+        return new ResponseEntity<>(ldapAuthenticationService.getUserByUsername("secretary"), HttpStatus.OK);
     }
 }

@@ -14,7 +14,10 @@ import com.ikub.reservationapp.users.validators.PasswordValidationUtil;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,8 +33,8 @@ public class DoctorServiceImpl implements DoctorService {
     private UserMapper userMapper;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Resource(name = "bcrypt")
+    private PasswordEncoder bCryptPasswordEncoder;
     @Autowired
     private RoleService roleService;
 
