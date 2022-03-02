@@ -14,7 +14,7 @@ spring:
   devtools:
     restart:
       enabled: true
-
+#****************** LDAP Configuration******************
   ldap:
     embedded:
       port: 8389
@@ -22,7 +22,12 @@ spring:
       base-dn: dc=springframework,dc=org
       validation:
         enabled: false
-
+#********** MONGODB
+  data:
+    mongodb:
+      uri: mongodb+srv://mongoduser:mongo2021pass@cluster-test.dmuwy.mongodb.net/test
+      database: reservation-app
+#** JWT Configuration
 jwt:
   token:
     refresh:

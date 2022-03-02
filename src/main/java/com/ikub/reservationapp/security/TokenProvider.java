@@ -3,6 +3,7 @@ package com.ikub.reservationapp.security;
 import com.ikub.reservationapp.common.model.AuthToken;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -84,8 +85,10 @@ public class TokenProvider implements Serializable {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
         log.info("User authorities -> {}", authorities);
+
         String accessToken = Jwts.builder()
                 .setSubject(authentication.getName())
+                .claim("userid",authentication.getDetails())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 1000))

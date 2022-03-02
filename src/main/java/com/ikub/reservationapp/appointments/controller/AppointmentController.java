@@ -5,7 +5,7 @@ import com.ikub.reservationapp.appointments.dto.reports.DoctorReportDto;
 import com.ikub.reservationapp.appointments.dto.reports.WeeklyMonthlyReportDto;
 import com.ikub.reservationapp.appointments.exception.AppointmentNotFoundException;
 import com.ikub.reservationapp.appointments.service.reports.ReportService;
-import com.ikub.reservationapp.appointments.service.AppointmentService;;
+import com.ikub.reservationapp.appointments.service.AppointmentService;
 import com.ikub.reservationapp.common.exception.ReservationAppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
